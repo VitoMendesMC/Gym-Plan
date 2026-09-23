@@ -24,7 +24,7 @@
 --quad:#12694A;--quadsoft:#DCEFE4;--acc:#AC5E16;--accsoft:#F8E6CE;--danger:#A63527;
 --pr:#8F6508;--prsoft:#F7EBCD;
 --gym:#151A1F;--act:#AC5E16;
---m-quad:#12694A;--m-ham:#0E6C85;--m-add:#5E7A24;--m-back:#2B5BA8;--m-chest:#B23A2E;
+--m-quad:#12694A;--m-ham:#0E6C85;--m-add:#5E7A24;--m-glute:#8B3FA3;--m-back:#2B5BA8;--m-chest:#B23A2E;
 --m-sh:#9C6712;--m-tri:#6B54A3;--m-bi:#9C3A6B;--m-calf:#7A5636;--m-abs:#1C7A6C;--m-misc:#6A757D;
 --mc:var(--m-misc);
 --sh:0 1px 2px rgba(20,26,31,.05),0 6px 16px -12px rgba(20,26,31,.45);
@@ -42,7 +42,7 @@
 --quad:#4FC094;--quadsoft:#16332B;--acc:#E4A251;--accsoft:#3A2A16;--danger:#E07A6E;
 --pr:#E3B547;--prsoft:#3D330F;
 --gym:#E7ECEA;--act:#E4A251;
---m-quad:#4FC094;--m-ham:#4FBBD6;--m-add:#A3C55C;--m-back:#7FA9EE;--m-chest:#EE8A7B;
+--m-quad:#4FC094;--m-ham:#4FBBD6;--m-add:#A3C55C;--m-glute:#CC8BE0;--m-back:#7FA9EE;--m-chest:#EE8A7B;
 --m-sh:#E3B052;--m-tri:#A793EA;--m-bi:#E58AB6;--m-calf:#C9A075;--m-abs:#4FC3B0;--m-misc:#8F9AA2;
 --sh:0 1px 2px rgba(0,0,0,.35);--sh-lift:0 10px 30px -14px rgba(0,0,0,.8);
 }}
@@ -52,13 +52,14 @@
 --quad:#4FC094;--quadsoft:#16332B;--acc:#E4A251;--accsoft:#3A2A16;--danger:#E07A6E;
 --pr:#E3B547;--prsoft:#3D330F;
 --gym:#E7ECEA;--act:#E4A251;
---m-quad:#4FC094;--m-ham:#4FBBD6;--m-add:#A3C55C;--m-back:#7FA9EE;--m-chest:#EE8A7B;
+--m-quad:#4FC094;--m-ham:#4FBBD6;--m-add:#A3C55C;--m-glute:#CC8BE0;--m-back:#7FA9EE;--m-chest:#EE8A7B;
 --m-sh:#E3B052;--m-tri:#A793EA;--m-bi:#E58AB6;--m-calf:#C9A075;--m-abs:#4FC3B0;--m-misc:#8F9AA2;
 --sh:0 1px 2px rgba(0,0,0,.35);--sh-lift:0 10px 30px -14px rgba(0,0,0,.8);
 }
 [data-m="Quads"]{--mc:var(--m-quad)}
 [data-m="Hamstrings"]{--mc:var(--m-ham)}
 [data-m="Adduktoren"]{--mc:var(--m-add)}
+[data-m="Gesäß"]{--mc:var(--m-glute)}
 [data-m="Rücken"]{--mc:var(--m-back)}
 [data-m="Brust"]{--mc:var(--m-chest)}
 [data-m="Schulter"]{--mc:var(--m-sh)}
@@ -476,7 +477,7 @@ nav.tabs{view-transition-name:tabs}
 (function(){
 'use strict';
 var KEY='trainingsapp.v1';
-var MUSCLES=['Quads','Hamstrings','Adduktoren','Rücken','Brust','Schulter','Trizeps','Bizeps','Waden','Bauch','Sonstiges'];
+var MUSCLES=['Quads','Hamstrings','Adduktoren','Gesäß','Rücken','Brust','Schulter','Trizeps','Bizeps','Waden','Bauch','Sonstiges'];
 var EQUIP=['Maschine','Kabel','Langhantel','Kurzhantel','Körpergewicht','Sonstiges'];
 var EQUIP_FILTERS=[['','Alle'],['Maschine','Maschine'],['Kabel','Kabel'],['frei','Freihantel'],['Langhantel','Langhantel'],['Kurzhantel','Kurzhantel'],['Körpergewicht','Körpergewicht']];
 
@@ -501,6 +502,8 @@ function seedExercises(){
     E('deadlift','Kreuzheben konventionell','Hamstrings','Langhantel',0,3,6,'Ganzkörper schwer, hüftdominant','Stange über der Fußmitte, Rücken neutral, Beine drücken den Boden weg. Nicht mit dem Rücken reißen.'),
     E('hyper','Hyperextension','Hamstrings','Körpergewicht',0,10,15,'Hamstrings, Glutes, unterer Rücken','Hüfte am Polsterrand. Rücken rund für Hamstrings, gerade für unteren Rücken.'),
     E('adductor','Adduktoren-Maschine','Adduktoren','Maschine',0,10,15,'Adduktoren-Isolation','Langsam, voller Weg, außen 1 s dehnen.'),
+    E('abductor','Abduktionsmaschine','Gesäß','Maschine',0,12,20,'Seitliches Gesäß, Hüftstabilität','Oberkörper leicht nach vorn für mehr Gesäß, außen 1 s halten, 2–3 s zurück, Gewichte nicht aufschlagen lassen.'),
+    E('sumo_dl','Sumo-Kreuzheben','Gesäß','Langhantel',0,3,6,'Hüftdominant, mehr Adduktoren und Quads als konventionell','Breiter Stand, Zehen 30–45° raus, Griff innerhalb der Beine, Knie aktiv nach außen, Hüfte nah an die Stange, Boden wegdrücken statt ziehen.'),
     E('copenhagen','Copenhagen Plank','Adduktoren','Körpergewicht',1,20,45,'Adduktoren isometrisch, Sekunden statt Wdh','Oberes Bein auf der Bank, Körper gerade, Zeit steigern.'),
     E('latpull','Latzug','Rücken','Kabel',1,8,12,'Vertikaler Zug, Lat','Brust raus, Ellbogen zu den Hüften, oben voll strecken.'),
     E('pullup','Klimmzug','Rücken','Körpergewicht',0,5,10,'Vertikaler Zug, schwer','Unten voll strecken, Kinn über die Stange, kein Schwung.'),
@@ -535,6 +538,7 @@ function seedExercises(){
     E('cable_curl','Kabel-Curl','Bizeps','Kabel',1,10,15,'Bizeps, konstante Spannung','Ellbogen fix, oben 1 s anspannen.'),
     E('preacher','Preacher Curl','Bizeps','Maschine',1,8,12,'Bizeps, kein Schwung möglich','Oberarme voll am Polster, unten fast strecken.'),
     E('inc_curl','Schrägbank-Curl','Bizeps','Kurzhantel',1,10,15,'Bizeps langer Kopf, Dehnung','Bank 45°, Arme hängen hinter dem Körper, Ellbogen bleiben zurück.'),
+    E('bi_mach','Bizeps-Maschine','Bizeps','Maschine',1,10,15,'Bizeps-Isolation, kein Schwung möglich','Sitz so einstellen, dass der Ellbogen auf Höhe der Drehachse liegt, unten fast strecken, oben 1 s halten, 2–3 s ablassen.'),
     E('calf_st','Wadenheben stehend','Waden','Maschine',1,10,15,'Waden, Gastrocnemius','Unten 2 s dehnen, oben 1 s halten, kein Federn.'),
     E('calf_se','Wadenheben sitzend','Waden','Maschine',1,12,20,'Waden, Soleus','Unten dehnen, langsam, voller Weg.'),
     E('cable_crunch','Kabel-Crunch','Bauch','Kabel',0,12,20,'Bauch mit Gewicht','Hüfte fix, Wirbelsäule einrollen, nicht aus der Hüfte ziehen.'),
@@ -544,6 +548,10 @@ function seedExercises(){
   var o={};L.forEach(function(e){o[e.id]=e;});return o;
 }
 var SEED=seedExercises();
+/* Datenversion: neue Standardübungen je Version. Nur diese werden bei bestehenden Daten ergänzt,
+   bewusst gelöschte Standardübungen bleiben gelöscht. */
+var DATA_VERSION=3;
+var SEED_ADDED={3:['abductor','sumo_dl','bi_mach']};
 function slot(exId,sets,anker,note,uni,min,max){var e=SEED[exId]||{muscle:'Sonstiges',reps:[8,12]};return {id:uid(),muscle:e.muscle,exId:exId,uni:!!uni,sets:sets,repMin:min||e.reps[0],repMax:max||e.reps[1],anker:!!anker,note:note||''};}
 var TEMPLATES={
   ganz:{name:'Ganzkörper 3+1, Quad-Priorität',build:function(){return [
@@ -603,21 +611,24 @@ function refreshPicker(){
 var S=null, view='home';
 var ui={planOpen:{},editId:null,finish:false,exDetail:null,exMuscle:'',exEquip:'',picker:null,cal:{mode:'month',anchor:today(),sel:today()},openW:null,actForm:false};
 
-function fresh(){return {version:2,exercises:seedExercises(),sessions:TEMPLATES.ganz.build(),workouts:[],activities:[],bodyweight:[],active:null,nextIdx:0,blockStart:today(),planName:TEMPLATES.ganz.name,rest:120,restBySession:{},sound:true};}
+function fresh(){return {version:DATA_VERSION,exercises:seedExercises(),sessions:TEMPLATES.ganz.build(),workouts:[],activities:[],bodyweight:[],active:null,nextIdx:0,blockStart:today(),planName:TEMPLATES.ganz.name,rest:120,restBySession:{},sound:true};}
 function migrate(){
+  var v0=S.version||1;
+  Object.keys(SEED_ADDED).forEach(function(k){if(v0<+k)SEED_ADDED[k].forEach(function(id){
+    if(!S.exercises[id]&&SEED[id])S.exercises[id]=JSON.parse(JSON.stringify(SEED[id]));});});
   Object.keys(SEED).forEach(function(k){var e=S.exercises[k];if(e){['equip','reps','goal','cue'].forEach(function(f){if(e[f]==null)e[f]=SEED[k][f];});}});
   Object.keys(S.exercises).forEach(function(k){var e=S.exercises[k];if(!e.equip)e.equip='Sonstiges';if(!e.reps)e.reps=[8,12];if(e.goal==null)e.goal='';if(e.cue==null)e.cue='';if(e.note==null)e.note='';});
   if(!S.activities)S.activities=[];if(!S.planName)S.planName='Eigener Plan';
   if(S.rest==null)S.rest=120;if(!S.restBySession)S.restBySession={};if(S.sound==null)S.sound=true;
   S.workouts.forEach(fixWorkout);if(S.active)fixWorkout(S.active);
-  S.version=2;
+  S.version=DATA_VERSION;
 }
 function fixWorkout(w){w.entries.forEach(function(e){if(e.setsTarget==null)e.setsTarget=e.sets.length;if(e.repMin==null){var x=ex(e.exId);e.repMin=x.reps[0];e.repMax=x.reps[1];}});}
 function load(){
-  try{var raw=localStorage.getItem(KEY);if(raw){S=JSON.parse(raw);if(!S.exercises||!S.sessions)throw 0;migrate();return;}}catch(e){}
+  try{var raw=localStorage.getItem(KEY);if(raw){S=JSON.parse(raw);if(!S.exercises||!S.sessions)throw 0;var vIn=S.version;migrate();if(S.version!==vIn)save();return;}}catch(e){}
   S=fresh();save();
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('Speichern fehlgeschlagen');}}
+function save(){_lpIdx=null;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('Speichern fehlgeschlagen');}}
 var _lt;function saveLazy(){clearTimeout(_lt);_lt=setTimeout(save,300);}
 
 function ex(id){return S.exercises[id]||{id:id,name:'(gelöschte Übung)',muscle:'Sonstiges',equip:'Sonstiges',uniOk:false,reps:[8,12],goal:'',cue:'',note:''};}
@@ -628,10 +639,19 @@ function cur(){if(ui.editId){var w=workoutById(ui.editId);if(w)return w;ui.editI
 function wctx(){return (S.active&&view==='home')?S.active:(view==='cal'?cur():null);}
 function emptySet(){return {w:'',r:'',rir:'',note:'',done:false};}
 function filled(s){return s.w!==''||s.r!=='';}
+/* Nachschlagetabelle Übung+Seite -> Einträge, neueste zuerst. Wird bei jedem Speichern und Neuaufbau verworfen. */
+var _lpIdx=null;
+function lpIndex(){
+  if(_lpIdx)return _lpIdx;
+  var idx={};
+  S.workouts.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0;}).forEach(function(w){
+    w.entries.forEach(function(e){var k=e.exId+'|'+(e.uni?1:0);(idx[k]=idx[k]||[]).push({w:w,e:e});});});
+  return (_lpIdx=idx);}
 function lastPerf(exId,uni,excludeId){
-  var list=S.workouts.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0;});
-  for(var i=0;i<list.length;i++){var w=list[i];if(w.id===excludeId)continue;
-    for(var j=0;j<w.entries.length;j++){var e=w.entries[j];if(e.exId===exId&&!!e.uni===!!uni){var done=e.sets.filter(filled);if(done.length)return {date:w.date,sets:done,note:e.note};}}}
+  var l=lpIndex()[exId+'|'+(uni?1:0)]||[];
+  for(var i=0;i<l.length;i++){var w=l[i].w,e=l[i].e;if(w.id===excludeId)continue;
+    if(e.exId!==exId||!!e.uni!==!!uni)continue;
+    var done=e.sets.filter(filled);if(done.length)return {date:w.date,sets:done,note:e.note};}
   return null;
 }
 function dk(v){return String(v).replace('.',',');}
@@ -719,7 +739,17 @@ function scrollNext(ei){
     var y=cards[i].getBoundingClientRect().top+(window.pageYOffset||0)-120;
     try{window.scrollTo({top:y,behavior:'smooth'});}catch(e){window.scrollTo(0,y);}
     return;}}
+/* Satz erledigt: gemeinsamer Ablauf für Haken und Zeile-verlassen */
+function afterDone(w,ei){
+  var live=!!(S.active&&w===S.active);if(!live)return;
+  var fe=document.activeElement,typing=!!(fe&&/^(INPUT|TEXTAREA)$/.test(fe.tagName));
+  var card=document.querySelectorAll('.card.entry')[ei];
+  /* Nicht zuklappen, solange du in dieser Karte noch tippst (z. B. Übungsnotiz) */
+  if(!(typing&&card&&card.contains(fe))){if(foldCard(w,ei)&&!typing)scrollNext(ei);}
+  audioCtx();wakeOn();if(ssRole(w,ei)==='a')toast('Supersatz – direkt weiter');else startRest();}
 function toggleDone(w,key){
+  if(_auto&&_auto.k===key&&Date.now()-_auto.t<500){_auto=null;return;}
+  delete _dirty[key];
   var pr=key.split('.'),ei=+pr[0],si=+pr[1],e=w.entries[ei],st=e.sets[si];
   var now=!isDone(st);
   if(now&&!filled(st)){
@@ -728,15 +758,29 @@ function toggleDone(w,key){
   }
   st.done=now;save();syncRow(w,ei,si);updateProgress();
   var live=!!(S.active&&w===S.active);
-  if(live&&foldCard(w,ei))scrollNext(ei);
-  if(now)checkPR(w,ei,si);
-  if(now&&live){audioCtx();wakeOn();if(ssRole(w,ei)==='a')toast('Supersatz – direkt weiter');else startRest();}}
-function autoDone(w,ei,si){
-  var st=w.entries[ei].sets[si],both=st.w!==''&&st.r!=='';
-  var live=!!(S.active&&w===S.active);
-  if(both&&!isDone(st)){st.done=true;syncRow(w,ei,si);updateProgress();checkPR(w,ei,si);
-    if(live){if(foldCard(w,ei))scrollNext(ei);audioCtx();wakeOn();if(ssRole(w,ei)==='a')toast('Supersatz – direkt weiter');else startRest();}return;}
-  if(!both&&isDone(st)){st.done=false;syncRow(w,ei,si);updateProgress();if(live)foldCard(w,ei);}}
+  if(!now&&live)foldCard(w,ei);
+  refreshPR(w,ei,si);
+  if(now)afterDone(w,ei);}
+/* Zeile verlassen: erst hier wird ausgewertet, nie während des Tippens */
+var _dirty={},_auto=null;
+function rowKey(el){if(!el||!el.dataset)return null;var d=el.dataset;
+  if(d.set){var a=d.set.split('.');return a[0]+'.'+a[1];}
+  if(d.stp){var b=d.stp.split('|');return b[0]+'.'+b[1];}
+  return d.done||d.noteopen||null;}
+function leaveRow(k){
+  var o=_dirty[k];if(!o)return;delete _dirty[k];
+  var w=o.w;if(w!==S.active&&S.workouts.indexOf(w)<0)return;
+  var ei=w.entries.indexOf(o.e),si=ei<0?-1:o.e.sets.indexOf(o.st);if(si<0)return;
+  var st=o.st,both=st.w!==''&&st.r!=='',dn=isDone(st),live=!!(S.active&&w===S.active);
+  if(both&&!dn){st.done=true;
+    /* Sperre gegen Doppel-Auslösen nur, wenn der Fokus ins Leere ging (iPhone: Tipp auf den Haken) */
+    var ae=document.activeElement;_auto=(!ae||ae===document.body)?{k:ei+'.'+si,t:Date.now()}:null;save();syncRow(w,ei,si);updateProgress();refreshPR(w,ei,si);afterDone(w,ei);return;}
+  if(!both&&dn){st.done=false;save();syncRow(w,ei,si);updateProgress();refreshPR(w,ei,si);if(live)foldCard(w,ei);return;}
+  syncRow(w,ei,si);refreshPR(w,ei,si);save();}
+document.addEventListener('focusout',function(ev){
+  var k=rowKey(ev.target);if(!k||!_dirty[k])return;
+  if(rowKey(ev.relatedTarget)===k)return;
+  setTimeout(function(){if(rowKey(document.activeElement)===k)return;leaveRow(k);},0);});
 function stepVal(w,key){
   var pr=key.split('|'),ei=+pr[0],si=+pr[1],f=pr[2],dl=Number(pr[3]);
   var e=w.entries[ei],st=e.sets[si],cur=Number(st[f]);
@@ -748,7 +792,8 @@ function stepVal(w,key){
   cur=f==='w'?Math.round(cur*4)/4:Math.round(cur);
   if(cur<0)cur=0;
   st[f]=String(cur);
-  syncRow(w,ei,si);autoDone(w,ei,si);updateProgress();foldCard(w,ei);saveLazy();}
+  /* Knöpfe verstellen nur Werte, abgehakt wird per Haken */
+  syncRow(w,ei,si);refreshPR(w,ei,si);saveLazy();}
 function toggleNoteRow(key){
   var tr=document.querySelector('tr[data-nr="'+key+'"]');if(!tr)return;
   var on=tr.classList.toggle('on');
@@ -829,17 +874,18 @@ function bestEver(exId,uni,excludeId){
     w.entries.forEach(function(e){if(e.exId!==exId||!!e.uni!==!!uni)return;
       e.sets.forEach(function(st){var v=e1(st);if(v>b)b=v;});});});
   return (_prC[k]=b);}
-function markPR(ei,si){
-  var btn=document.querySelector('button[data-done="'+ei+'.'+si+'"]');
-  if(btn&&btn.parentNode.parentNode){btn.parentNode.parentNode.classList.add('pr');btn.classList.add('just');}
+function isPRset(w,e,st){var b=bestEver(e.exId,e.uni,w.id);return b>0&&isDone(st)&&e1(st)>b*1.001;}
+/* PR in beide Richtungen neu bewerten: setzen, wenn neu erreicht; entfernen, wenn durch Korrektur weg */
+function refreshPR(w,ei,si){
+  var e=w.entries[ei],st=e.sets[si],on=isPRset(w,e,st);
+  var btn=document.querySelector('button[data-done="'+ei+'.'+si+'"]'),tr=btn&&btn.closest('tr');
+  var was=!!(tr&&tr.classList.contains('pr'));
+  if(tr){tr.classList.toggle('pr',on);if(on&&!was)btn.classList.add('just');}
   var card=document.querySelectorAll('.card.entry')[ei];
-  if(card){var g=card.querySelector('.grow');
-    if(g&&!g.querySelector('.pill.pr'))g.insertAdjacentHTML('beforeend',' <span class="pill pr just">PR</span>');}}
-function checkPR(w,ei,si){
-  var e=w.entries[ei],st=e.sets[si],v=e1(st);
-  if(v<=0)return;
-  var b=bestEver(e.exId,e.uni,w.id);if(b<=0)return;
-  if(v>b*1.001){markPR(ei,si);toast('Bestleistung: '+dk(st.w)+' × '+st.r);}}
+  if(card){var any=e.sets.some(function(x){return isPRset(w,e,x);}),pill=card.querySelector('.pill.pr');
+    if(any&&!pill){var g=card.querySelector('.grow');if(g)g.insertAdjacentHTML('beforeend',' <span class="pill pr just">PR</span>');}
+    else if(!any&&pill)pill.remove();}
+  if(on&&!was&&tr)toast('Bestleistung: '+dk(st.w)+' × '+st.r);}
 
 function volWeek(anchor){
   var ws=weekStart(anchor),we=addDays(ws,6),m={};
@@ -978,7 +1024,7 @@ function render(){
     document.startViewTransition(renderNow);return;}
   renderNow();}
 function renderNow(){
-  _prC={};
+  _prC={};_lpIdx=null;
   var h='';var w=cur();
   if(S.active&&view==='home')h=renderWorkout(S.active,true);
   else if(w&&view==='cal')h=renderWorkout(w,false);
@@ -1046,7 +1092,7 @@ function renderWorkout(a,isActive){
   a.entries.forEach(function(e,ei){
     var x=ex(e.exId),sl=slotById(s,e.slotId);var planned=sl&&sl.exId===e.exId;
     var perf=lastPerf(e.exId,e.uni,a.id);var hint=progHint(e,perf);var isQ=x.muscle==='Quads';
-    var prBase=bestEver(e.exId,e.uni,a.id),hasPR=prBase>0&&e.sets.some(function(st){return e1(st)>prBase*1.001;});
+    var prBase=bestEver(e.exId,e.uni,a.id),hasPR=prBase>0&&e.sets.some(function(st){return isDone(st)&&e1(st)>prBase*1.001;});
     var allDone=e.sets.length>0&&e.sets.every(isDone);var role=ssRole(a,ei);
     h+='<div class="card entry'+(sl&&sl.anker?' anker':'')+(isActive&&allDone?' folded':'')+(role==='a'?' ssA':role==='b'?' ssB':'')+'" data-m="'+esc(x.muscle)+'" data-sum="'+esc(fmtSets(e.sets.filter(filled))||'erledigt')+'">';
     h+='<div class="row click" data-fold="'+ei+'"><div class="grow"><span class="exname">'+esc(x.name)+'</span> '+(sl&&sl.anker?'<span class="pill a">Anker</span>':'')+' '+mpill(x.muscle)+' <span class="pill">'+esc(x.equip)+'</span>'+(hasPR?' <span class="pill pr">PR</span>':'')+(role?' <span class="pill ss">Supersatz '+(role==='a'?'1/2':'2/2')+'</span>':'')+'</div><button class="tiny danger" data-edel="'+ei+'" title="Übung aus dieser Einheit entfernen">✕</button></div>';
@@ -1066,7 +1112,7 @@ function renderWorkout(a,isActive){
     h+='<table class="sets"><thead><tr><th></th><th>kg</th><th>Wdh</th><th>RIR</th><th></th></tr></thead><tbody>';
     e.sets.forEach(function(st,si){
       var ph=perf&&perf.sets[si]?perf.sets[si]:null;var dn=isDone(st);
-      var isPR=prBase>0&&e1(st)>prBase*1.001;
+      var isPR=dn&&prBase>0&&e1(st)>prBase*1.001;
       h+='<tr class="setrow'+(dn?' done':'')+(isPR?' pr':'')+'">';
       h+='<td class="n"><button class="chk" data-done="'+ei+'.'+si+'" title="Satz erledigt">'+(dn?'\u2713':(si+1))+'</button></td>';
       h+='<td class="w"><div class="stp"><button class="sb" data-stp="'+ei+'|'+si+'|w|-2.5">−</button><input type="number" step="0.5" inputmode="decimal" data-set="'+ei+'.'+si+'.w" value="'+esc(st.w)+'" placeholder="'+(ph?esc(ph.w):'')+'"><button class="sb" data-stp="'+ei+'|'+si+'|w|2.5">+</button></div></td>';
@@ -1408,8 +1454,7 @@ document.addEventListener('input',function(ev){
   if(w){
     if(d.set){parts=d.set.split('.');var st=w.entries[+parts[0]].sets[+parts[1]];st[parts[2]]=t.value;
       if(parts[2]==='note'){var nb=document.querySelector('button[data-noteopen="'+parts[0]+'.'+parts[1]+'"]');if(nb)nb.classList.toggle('has',t.value!=='');}
-      else{autoDone(w,+parts[0],+parts[1]);
-        var tr=t.closest('tr');if(tr)tr.classList.toggle('done',isDone(st));updateProgress();}
+      else _dirty[parts[0]+'.'+parts[1]]={w:w,e:w.entries[+parts[0]],st:st};
       saveLazy();return;}
     if(d.enote!==undefined){w.entries[+d.enote].note=t.value;saveLazy();return;}
     if(d.wnote){w.note=t.value;saveLazy();return;}
