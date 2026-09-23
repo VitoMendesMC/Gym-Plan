@@ -311,6 +311,19 @@ font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
 color:var(--mute);white-space:nowrap;text-align:right}
 .pk-item .m .mrow{display:flex;align-items:center;gap:.3rem;color:var(--mc)}
 
+/* ============ Neue Übung ============ */
+.sheet>.nx-head{flex-wrap:nowrap}
+.sheet>.nx-head b{text-align:center;font-size:1.05rem;font-weight:600}
+.nx-body{overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;margin-top:.6rem;padding-bottom:.5rem}
+body.kbd .nx-body{padding-bottom:var(--kb,0px)}
+.nx-body label.small:not(.row){margin-top:.85rem}
+.nx-body>label.small:first-child{margin-top:0}
+.chips.wrap{flex-wrap:wrap;overflow:visible;margin:0;padding:0;-webkit-mask-image:none;mask-image:none}
+.nx-step{display:flex;align-items:center;gap:.4rem}
+.nx-step b{flex:1;text-align:center;font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+.nx-uni{gap:.45rem;margin-top:.85rem}
+button:disabled{opacity:.4;pointer-events:none;box-shadow:none}
+
 /* ============ Toast ============ */
 .toast{position:fixed;left:50%;bottom:5rem;z-index:30;padding:.6rem 1rem;border-radius:2rem;white-space:nowrap;max-width:calc(100vw - 1.5rem);overflow:hidden;text-overflow:ellipsis;
 background:var(--ink);color:var(--bg);font-size:.88rem;font-weight:600;box-shadow:var(--sh-lift);
@@ -391,6 +404,8 @@ padding:.4rem .55rem;font-size:.8rem;font-weight:700;border-radius:var(--rs)}
 animation:fade var(--d-fast) var(--ease-out),overpulse 1.6s ease-in-out .4s 3}
 @keyframes overpulse{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--quad) 35%,transparent)}}
 .rb-hint{font-size:.78rem;font-weight:600;opacity:.8}
+.restbar.over .rb-hint{display:block;margin-top:.2rem}
+.restbar.over .rb-x{font-weight:700;opacity:.8;padding:.4rem .6rem}
 body.resting main{padding-bottom:11rem}
 /* Tastatur offen: Leiste sitzt direkt über der Tastatur statt dahinter (Wert kommt aus visualViewport) */
 body.kbd .restbar{bottom:calc(var(--kb,0px) + .5rem);transition:bottom var(--d-ui) var(--ease-out),transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--ease-out)}
@@ -620,7 +635,7 @@ function refreshPicker(){
   var l=document.getElementById('pk_list');if(l)l.innerHTML=pickerListHTML();}
 
 var S=null, view='home';
-var ui={planOpen:{},editId:null,finish:false,exDetail:null,exMuscle:'',exEquip:'',picker:null,cal:{mode:'month',anchor:today(),sel:today()},openW:null,actForm:false};
+var ui={newEx:null,planOpen:{},editId:null,finish:false,exDetail:null,exMuscle:'',exEquip:'',picker:null,cal:{mode:'month',anchor:today(),sel:today()},openW:null,actForm:false};
 
 function fresh(){return {version:DATA_VERSION,exercises:seedExercises(),sessions:TEMPLATES.ganz.build(),workouts:[],activities:[],bodyweight:[],active:null,nextIdx:0,blockStart:today(),planName:TEMPLATES.ganz.name,rest:120,restBySession:{},sound:true};}
 function migrate(){
@@ -702,7 +717,6 @@ function pickerListHTML(){
 }
 function applyPick(id){
   var c=ui.picker.ctx;ui.picker=null;
-  if(id==='__new'){id=newExerciseDialog(c.muscle);if(!id){render();return;}}
   var x=ex(id);
   if(c.mode==='swap'){var w=wctx();var e=w.entries[c.ei];e.exId=id;e.repMin=x.reps[0];e.repMax=x.reps[1];if(!x.uniOk)e.uni=false;}
   else if(c.mode==='addentry'){var w2=wctx();var arr=[];for(var i=0;i<3;i++)arr.push(emptySet());w2.entries.push({slotId:'extra_'+uid(),exId:id,uni:false,sets:arr,setsTarget:3,repMin:x.reps[0],repMax:x.reps[1],note:''});}
@@ -713,14 +727,52 @@ function applyPick(id){
   save();render();
 }
 function slotFor(id){var x=ex(id);return {id:uid(),muscle:x.muscle,exId:id,uni:false,sets:3,repMin:x.reps[0],repMax:x.reps[1],anker:false,note:''};}
-function newExerciseDialog(muscle){
-  var name=prompt('Name der neuen Übung:');if(!name)return null;
-  var m=prompt('Muskelgruppe: '+MUSCLES.join(', '),muscle||'Quads');if(!m||MUSCLES.indexOf(m)<0)m=muscle||'Sonstiges';
-  var eq=prompt('Gerät: '+EQUIP.join(', '),'Maschine');if(!eq||EQUIP.indexOf(eq)<0)eq='Sonstiges';
-  var uni=confirm('Kann die Übung einseitig ausgeführt werden? OK = ja');
-  var id='c_'+uid();S.exercises[id]={id:id,name:name.trim(),muscle:m,equip:eq,uniOk:uni,reps:[8,12],goal:'',cue:'',custom:true,note:''};save();
-  toast('Angelegt. Ziel und Ausführung unter Übungen ergänzen.');return id;
-}
+/* ---------- Neue Übung (Sheet) ---------- */
+function openNewEx(muscle){
+  ui.newEx={name:'',muscle:muscle||'',equip:'Maschine',uni:false,reps:[8,12],goal:'',cue:''};render();
+  setTimeout(function(){var i=document.getElementById('nx_name');if(i)i.focus();},50);}
+function nxMissing(){var n=ui.newEx,m=[];if(!n.name.trim())m.push('Name');if(!n.muscle)m.push('Muskelgruppe');return m;}
+function renderNewEx(){
+  var n=ui.newEx,miss=nxMissing();
+  function ch(list,cur,attr){return '<div class="chips wrap">'+list.map(function(v){return '<button data-'+attr+'="'+esc(v)+'" class="'+(v===cur?'on':'')+'">'+esc(v)+'</button>';}).join('')+'</div>';}
+  function stp(i,lbl){return '<div><label class="small">'+lbl+'</label><div class="nx-step"><button class="icon" data-nxr="'+i+'|-1" aria-label="'+lbl+' verringern">−</button><b id="nx_r'+i+'">'+n.reps[i]+'</b><button class="icon" data-nxr="'+i+'|1" aria-label="'+lbl+' erhöhen">+</button></div></div>';}
+  var h='<div class="overlay" data-nxbg="1"><div class="sheet" data-stop="1">';
+  h+='<div class="row nx-head"><button class="tiny" data-nxcancel="1">Abbrechen</button><b class="grow">Neue Übung</b><button class="tiny primary" id="nx_save" data-nxsave="1"'+(miss.length?' disabled':'')+'>Anlegen</button></div>';
+  h+='<div class="nx-body">';
+  h+='<label class="small" for="nx_name">Name</label><input id="nx_name" data-nxf="name" value="'+esc(n.name)+'" placeholder="z. B. Hip Thrust" autocomplete="off" enterkeyhint="next">';
+  h+='<label class="small" for="nx_goal">Ziel / Rolle (optional)</label><input id="nx_goal" data-nxf="goal" value="'+esc(n.goal)+'" placeholder="z. B. Gesäß-Hauptübung, schwer" autocomplete="off">';
+  h+='<label class="small" for="nx_cue">Ausführung (optional)</label><textarea id="nx_cue" data-nxf="cue" placeholder="Worauf du achtest: Position, Tempo, Bewegungsweg">'+esc(n.cue)+'</textarea>';
+  h+='<label class="small">Muskelgruppe</label>'+ch(MUSCLES,n.muscle,'nxm');
+  h+='<label class="small">Gerät</label>'+ch(EQUIP,n.equip,'nxe');
+  h+='<div class="grid2">'+stp(0,'Wdh von')+stp(1,'Wdh bis')+'</div>';
+  h+='<label class="row small nx-uni"><input type="checkbox" data-nxu="1"'+(n.uni?' checked':'')+'> einseitig möglich</label>';
+  h+='<p class="small mute" id="nx_hint">'+(miss.length?esc(miss.join(' und ')+(miss.length>1?' fehlen':' fehlt')+' noch'):'')+'</p>';
+  return h+'</div></div></div>';}
+/* Gezielte Aktualisierung ohne Neuaufbau: Tastatur bleibt offen, Sheet springt nicht neu rein */
+function nxSync(){var n=ui.newEx;if(!n)return;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-nxm]'),function(b){b.classList.toggle('on',b.dataset.nxm===n.muscle);});
+  Array.prototype.forEach.call(document.querySelectorAll('[data-nxe]'),function(b){b.classList.toggle('on',b.dataset.nxe===n.equip);});
+  var r0=document.getElementById('nx_r0'),r1=document.getElementById('nx_r1');if(r0)r0.textContent=n.reps[0];if(r1)r1.textContent=n.reps[1];
+  var m=nxMissing(),sv=document.getElementById('nx_save'),hi=document.getElementById('nx_hint');
+  if(sv)sv.disabled=m.length>0;if(hi)hi.textContent=m.length?m.join(' und ')+(m.length>1?' fehlen':' fehlt')+' noch':'';}
+function nxSave(){
+  var n=ui.newEx;if(!n||nxMissing().length)return;
+  var id='c_'+uid();
+  S.exercises[id]={id:id,name:n.name.trim(),muscle:n.muscle,equip:n.equip,uniOk:!!n.uni,reps:[n.reps[0],n.reps[1]],goal:n.goal.trim(),cue:n.cue.trim(),custom:true,note:''};save();
+  var fromPicker=!!ui.picker;
+  closeOverlay(function(){ui.newEx=null;
+    if(fromPicker){applyPick(id);}else{ui.exDetail=id;render();window.scrollTo(0,0);}
+    toast('Übung angelegt');});}
+function nxCancel(){
+  if(ui.picker){ui.newEx=null;render();return;}   /* zurück zur Übungsauswahl */
+  closeOverlay(function(){ui.newEx=null;render();});}
+/* Feld unter der Tastatur? Im Sheet so weit hochscrollen, dass es sichtbar ist */
+document.addEventListener('focusin',function(ev){
+  var el=ev.target;if(!ui.newEx||!el.closest||!el.closest('.nx-body'))return;
+  setTimeout(function(){var body=el.closest('.nx-body');if(!body||document.activeElement!==el)return;
+    var vv=window.visualViewport,bottom=vv?vv.offsetTop+vv.height:window.innerHeight,r=el.getBoundingClientRect();
+    if(r.bottom>bottom-16)body.scrollTop+=r.bottom-(bottom-16);},350);});
+
 
 
 /* ---------- Sätze abhaken, Stepper, Fortschritt ---------- */
@@ -751,12 +803,18 @@ function scrollNext(ei){
     try{window.scrollTo({top:y,behavior:'smooth'});}catch(e){window.scrollTo(0,y);}
     return;}}
 /* Satz erledigt: gemeinsamer Ablauf für Haken und Zeile-verlassen */
+/* Scrollziel erst berechnen, wenn die Karte fertig zugeklappt ist, sonst schießt die Seite um die Kartenhöhe übers Ziel */
+function scrollAfterFold(card,ei){
+  var b=card&&card.querySelector('.ebody'),done=false;function go(){if(done)return;done=true;scrollNext(ei);}
+  if(!b||window.matchMedia('(prefers-reduced-motion: reduce)').matches){go();return;}
+  b.addEventListener('transitionend',function h(ev){if(ev.target===b&&ev.propertyName==='grid-template-rows'){b.removeEventListener('transitionend',h);go();}});
+  setTimeout(go,320);}
 function afterDone(w,ei){
   var live=!!(S.active&&w===S.active);if(!live)return;
   var fe=document.activeElement,typing=!!(fe&&/^(INPUT|TEXTAREA)$/.test(fe.tagName));
   var card=document.querySelectorAll('.card.entry')[ei];
   /* Nicht zuklappen, solange du in dieser Karte noch tippst (z. B. Übungsnotiz) */
-  if(!(typing&&card&&card.contains(fe))){if(foldCard(w,ei)&&!typing)scrollNext(ei);}
+  if(!(typing&&card&&card.contains(fe))){if(foldCard(w,ei)&&!typing)scrollAfterFold(card,ei);}
   audioCtx();wakeOn();if(ssRole(w,ei)==='a')toast('Supersatz – direkt weiter');else startRest();}
 function toggleDone(w,key){
   if(_auto&&_auto.k===key&&Date.now()-_auto.t<500){_auto=null;return;}
@@ -816,9 +874,12 @@ var rest={end:0,dur:0,paused:0,over:0,t:null,mode:''};
 function restDur(){var sid=S&&S.active?S.active.sessionId:'';var m=(S&&S.restBySession)||{};return (sid&&m[sid])||(S&&S.rest)||120;}
 function setRestDur(sec){sec=Math.max(15,Math.min(900,Math.round(sec)));S.rest=sec;
   if(S.active&&S.active.sessionId){S.restBySession=S.restBySession||{};S.restBySession[S.active.sessionId]=sec;}save();}
-function persistRest(){try{localStorage.setItem(RKEY,JSON.stringify({end:rest.end,dur:rest.dur,paused:rest.paused}));}catch(e){}}
-function loadRest(){try{var o=JSON.parse(localStorage.getItem(RKEY)||'null');
-  if(o&&(o.paused||o.end>Date.now())){rest.end=o.end||0;rest.dur=o.dur||restDur();rest.paused=o.paused||0;tickRest();}}catch(e){}}
+var REST_CAP=600000; /* Überzeit höchstens 10 min anzeigen, danach verschwindet die Leiste */
+function persistRest(){try{localStorage.setItem(RKEY,JSON.stringify({end:rest.end,dur:rest.dur,paused:rest.paused,over:rest.over}));}catch(e){}}
+function loadRest(){try{var o=JSON.parse(localStorage.getItem(RKEY)||'null');if(!o)return;var now=Date.now();
+  if(o.paused||o.end>now){rest.end=o.end||0;rest.dur=o.dur||restDur();rest.paused=o.paused||0;tickRest();return;}
+  /* Pause lief ab, während die App zu war: Überzeit ab dem echten Ende weiterzählen */
+  var ov=o.over||o.end||0;if(ov&&now-ov<REST_CAP){rest.end=0;rest.over=ov;rest.dur=o.dur||restDur();tickRest();}}catch(e){}}
 function restLeft(){return rest.paused?rest.paused:Math.max(0,Math.round((rest.end-Date.now())/1000));}
 function fmtT(s){return Math.floor(s/60)+':'+p2(s%60);}
 function startRest(sec){sec=sec||restDur();rest.dur=sec;rest.end=Date.now()+sec*1000;rest.paused=0;rest.over=0;persistRest();tickRest();}
@@ -839,18 +900,19 @@ function adjRest(n){var l=restLeft()+n;if(l<5)l=5;
   setRestDur(restDur()+n);persistRest();drawRest();}
 function drawRest(){
   var host=document.getElementById('rest');if(!host)return;
-  if(rest.end&&!rest.paused&&restLeft()<=0){rest.end=0;rest.over=Date.now();persistRest();if(!S||S.sound!==false)alarm();}
-  var on=!!(rest.end||rest.paused),over=!on&&rest.over&&(Date.now()-rest.over<20000);
+  if(rest.end&&!rest.paused&&restLeft()<=0){rest.over=rest.end;rest.end=0;persistRest();if(!S||S.sound!==false)alarm();}
+  var on=!!(rest.end||rest.paused),over=!on&&rest.over&&(Date.now()-rest.over<REST_CAP);
   var mode=on?'on':(over?'over':'off');
   if(mode==='off'){if(rest.mode){closeRestbar();}else{clearInterval(rest.t);rest.t=null;document.body.classList.remove('resting');}return;}
   document.body.classList.add('resting');
   if(rest.mode!==mode){rest.mode=mode;
     host.innerHTML=mode==='on'
       ?'<div class="restbar"><button class="rb-b" data-rest="m30">−30</button><div class="rb-main" data-rest="pause"><b id="rtime">0:00</b><div class="rb-p"><i id="rfill"></i></div></div><button class="rb-b" data-rest="p30">+30</button><button class="rb-b rb-x" data-rest="skip">✕</button></div>'
-      :'<div class="restbar over" data-rest="skip"><b>Pause vorbei</b><span class="grow"></span><span class="rb-hint">nächster Satz ›</span></div>';}
+      :'<div class="restbar over" data-rest="skip"><div class="rb-main"><b id="rover">+0:00</b><span class="rb-hint">Pause vorbei</span></div><span class="rb-x">✕</span></div>';}
   if(mode==='on'){var l=restLeft(),tE=document.getElementById('rtime'),fE=document.getElementById('rfill');
     if(tE)tE.textContent=(rest.paused?'❚❚ ':'')+fmtT(l);
-    if(fE)fE.style.transform='scaleX('+(rest.dur?Math.max(0,Math.min(1,l/rest.dur)):0).toFixed(3)+')';}}
+    if(fE)fE.style.transform='scaleX('+(rest.dur?Math.max(0,Math.min(1,l/rest.dur)):0).toFixed(3)+')';}
+  else{var oE=document.getElementById('rover');if(oE)oE.textContent='+'+fmtT(Math.max(0,Math.floor((Date.now()-rest.over)/1000)));}}
 
 /* Tastatur erkennen: sichtbarer Bereich (visualViewport) kleiner als das Layout = verdeckter Teil unten */
 function kbSync(){
@@ -1053,7 +1115,7 @@ function renderNow(){
     var bn=backupNote();if(bn&&(view==='home'||view==='more'))h+='<div class="banner warn" data-tab="more">'+esc(bn)+' – jetzt exportieren</div>';
     if(view==='home')h+=renderHome();else if(view==='plan')h+=renderPlan();else if(view==='cal')h+=renderCal();else if(view==='ex')h+=renderExercises();else h+=renderMore();
   }
-  if(ui.picker)h+=renderPicker();
+  if(ui.newEx)h+=renderNewEx();else if(ui.picker)h+=renderPicker();
   app.innerHTML=h;
   app.classList.toggle('entered',_entered);
   document.body.classList.toggle('wk',!!app.querySelector('.sticky'));
@@ -1348,14 +1410,30 @@ function deleteWorkout(id){
   toastUndo('Einheit gelöscht',function(){S.workouts.splice(Math.min(idx,S.workouts.length),0,w);});}
 
 document.addEventListener('click',function(ev){
-  var el=ev.target.closest('[data-tab],[data-start],[data-act],[data-open],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-up],[data-down],[data-del],[data-panker],[data-puni],[data-addslot],[data-sup],[data-sdown],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-stp],[data-noteopen],[data-fold],[data-undo],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot]');
+  var el=ev.target.closest('[data-tab],[data-start],[data-act],[data-open],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-up],[data-down],[data-del],[data-panker],[data-puni],[data-addslot],[data-sup],[data-sdown],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-stp],[data-noteopen],[data-fold],[data-undo],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
   if(!el)return;var d=el.dataset,parts;
   if(d.undo){var uf=undoFn;undoFn=null;document.getElementById('toast').classList.remove('show');
     if(uf){uf();save();render();toast('Wiederhergestellt');}return;}
+  /* Neue Übung */
+  if(ui.newEx){
+    if(document.querySelector('.overlay.closing'))return;
+    var nx=ui.newEx;
+    if(d.nxm!==undefined){nx.muscle=d.nxm;nxSync();return;}
+    if(d.nxe!==undefined){nx.equip=d.nxe;nxSync();return;}
+    if(d.nxr!==undefined){var rp=d.nxr.split('|'),ri=+rp[0],rv=nx.reps[ri]+(+rp[1]);
+      rv=ri===0?Math.min(rv,nx.reps[1]):Math.max(rv,nx.reps[0]);nx.reps[ri]=Math.max(1,Math.min(100,rv));nxSync();return;}
+    if(d.nxsave){nxSave();return;}
+    if(d.nxcancel){nxCancel();return;}
+    if(d.stop)return;
+    /* Tipp auf den Hintergrund schließt nur, solange nichts eingetragen ist */
+    if(d.nxbg&&!nx.name.trim()&&!nx.goal.trim()&&!nx.cue.trim()){nxCancel();return;}
+    return;
+  }
   /* Picker */
   if(ui.picker){
     if(document.querySelector('.overlay.closing'))return;
-    if(d.pick!==undefined){applyPick(d.pick);return;}
+    if(d.pick==='__new'){openNewEx(ui.picker.ctx.muscle||ui.picker.muscle);return;}
+    if(d.pick!==undefined){var pid=d.pick;closeOverlay(function(){applyPick(pid);});return;}
     if(d.pkm!==undefined){ui.picker.muscle=d.pkm;refreshPicker();return;}
     if(d.pke!==undefined){ui.picker.equip=d.pke;refreshPicker();return;}
     if(d.stop)return;
@@ -1418,7 +1496,7 @@ document.addEventListener('click',function(ev){
   if(d.exe!==undefined){ui.exEquip=d.exe;render();return;}
   if(d.exopen){ui.exDetail=d.exopen;render();window.scrollTo(0,0);return;}
   if(d.act==='exback'){ui.exDetail=null;render();return;}
-  if(d.act==='newex'){var id=newExerciseDialog(ui.exMuscle||'Quads');if(id){ui.exDetail=id;render();}return;}
+  if(d.act==='newex'){openNewEx(ui.exMuscle);return;}
   if(d.exdel){var inPlan=[];S.sessions.forEach(function(s){s.slots.forEach(function(sl){if(sl.exId===d.exdel)inPlan.push(s.name);});});
     var msg='Übung endgültig löschen?'+(inPlan.length?' Sie steht im Plan ('+inPlan.join(', ')+') und wird dort entfernt.':'')+' Historie-Einträge bleiben und zeigen "(gelöschte Übung)".';
     if(confirm(msg)){S.sessions.forEach(function(s){s.slots=s.slots.filter(function(sl){return sl.exId!==d.exdel;});});delete S.exercises[d.exdel];ui.exDetail=null;save();render();}return;}
@@ -1446,7 +1524,8 @@ document.addEventListener('click',function(ev){
     save();render();toast('Getauscht: '+xr.name);return;}
   if(d.rotdel){parts=d.rotdel.split('.');var slD=sessionById(parts[0]).slots[+parts[1]],did=parts.slice(2).join('.');
     slD.alt=(slD.alt||[]).filter(function(q){return q!==did;});save();render();return;}
-  if(d.act==='addsession'){var nm=prompt('Name der neuen Einheit:','Einheit '+String.fromCharCode(65+S.sessions.length));if(!nm)return;S.sessions.push({id:uid(),name:nm,tag:'',slots:[]});save();render();return;}
+  if(d.act==='addsession'){var nsid=uid();S.sessions.push({id:nsid,name:'Einheit '+String.fromCharCode(65+S.sessions.length%26),tag:'',slots:[]});ui.planOpen[nsid]=true;save();render();
+    var ni=document.querySelector('input[data-sname="'+nsid+'"]');if(ni){ni.focus();ni.select();try{ni.scrollIntoView({block:'center',behavior:'smooth'});}catch(e){}}return;}
   if(d.act==='loadtpl'){var k=document.getElementById('tplsel').value;if(!TEMPLATES[k])return;if(confirm('Aktuellen Plan durch "'+TEMPLATES[k].name+'" ersetzen?')){S.sessions=TEMPLATES[k].build();S.planName=TEMPLATES[k].name;S.nextIdx=0;save();render();toast('Plan geladen');}return;}
   /* Mehr */
   if(d.act==='theme'){setTheme(d.val);render();return;}
@@ -1461,6 +1540,7 @@ document.addEventListener('click',function(ev){
 document.addEventListener('change',function(ev){
   var t=ev.target,d=t.dataset;
   if(t.id==='pastsel'&&t.value){var wv=startWorkout(t.value==='__free'?'':t.value,ui.cal.sel);S.workouts.push(wv);ui.editId=wv.id;view='cal';save();render();window.scrollTo(0,0);return;}
+  if(d.nxu&&ui.newEx){ui.newEx.uni=t.checked;return;}
   if(t.dataset.sound){S.sound=t.checked;save();toast(t.checked?'Ton an':'Ton aus');return;}
   if(t.id==='blockstart'){if(t.value){S.blockStart=t.value;save();render();}return;}
   var w=wctx();
@@ -1469,6 +1549,7 @@ document.addEventListener('change',function(ev){
 });
 document.addEventListener('input',function(ev){
   var t=ev.target,d=t.dataset,parts;
+  if(d.nxf&&ui.newEx){ui.newEx[d.nxf]=t.value;nxSync();return;}
   if(t.id==='ex_q'){ui.exQ=t.value;var xl=document.getElementById('ex_list');if(xl)xl.innerHTML=exTabListHTML();return;}
   if(t.id==='pk_q'&&ui.picker){ui.picker.q=t.value;var l=document.getElementById('pk_list');if(l)l.innerHTML=pickerListHTML();return;}
   var w=wctx();
