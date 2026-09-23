@@ -75,7 +75,9 @@ html{font-size:16px;-webkit-text-size-adjust:100%}
 @supports (font:-apple-system-body){html{font:-apple-system-body}}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.45;
 -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
-main{max-width:44rem;margin:0 auto;padding:.9rem .9rem 7rem}
+main{max-width:44rem;margin:0 auto;padding:calc(.9rem + env(safe-area-inset-top,0px)) .9rem 7rem;
+/* Mindestens 1px höher als der Bildschirm: kurze Seiten (Plan, Kalender) verhalten sich wie lange, Tab-Leiste bleibt ruhig */
+min-height:calc(100vh + 1px);min-height:calc(100lvh + 1px)}
 h1{font-family:var(--display);font-size:2.1rem;font-weight:700;line-height:1.05;letter-spacing:var(--track);margin:.5rem 0 .9rem}
 h2{font-family:var(--display);font-size:1.4rem;font-weight:700;line-height:1.15;letter-spacing:-.01em;margin:1.5rem 0 .5rem}
 h3{display:flex;align-items:center;gap:.45rem;font-size:.72rem;font-weight:700;text-transform:uppercase;
@@ -159,7 +161,7 @@ text-transform:uppercase;letter-spacing:.09em;padding:0 .3rem .1rem}
 .setrow.done td.n{color:var(--quad)}
 .setrow.done td:not(.note) input{background:var(--quadsoft);border-color:transparent}
 .notebox{font-size:.87rem;background:var(--soft);padding:.45rem .6rem;border-radius:var(--rs);
-border-left:3px solid var(--line);margin:.35rem 0;white-space:pre-wrap;color:var(--mute)}
+margin:.35rem 0;white-space:pre-wrap;color:var(--mute)}
 
 /* ============ Navigation ============ */
 nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:10;display:flex;justify-content:space-around;
@@ -172,9 +174,14 @@ nav.tabs button svg{width:22px;height:22px;display:block}
 nav.tabs button.on{color:var(--ink)}
 nav.tabs button.on::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
 width:1.7rem;height:2px;border-radius:0 0 2px 2px;background:var(--ink)}
-.sticky{position:sticky;top:0;z-index:5;margin:-.9rem -.9rem .7rem;padding:.65rem .9rem;
+.sticky{position:sticky;top:0;z-index:5;margin:calc(-.9rem - env(safe-area-inset-top,0px)) -.9rem .7rem;
+padding:calc(.65rem + env(safe-area-inset-top,0px)) .9rem .65rem;
 background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
 border-bottom:1px solid var(--line)}
+
+#sbar{position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:9;pointer-events:none;
+background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+body.wk #sbar{display:none}
 
 /* ============ Home ============ */
 .week{display:flex;align-items:center;gap:.85rem;background:var(--card);border:1px solid var(--line);
@@ -282,7 +289,7 @@ background:rgba(10,14,18,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:
 animation:fade var(--d-ui) var(--ease-out);
 transition:opacity var(--d-fast) var(--ease-out)}
 .overlay.closing{opacity:0}
-.sheet{background:var(--bg);width:100%;max-width:44rem;max-height:92vh;
+.sheet{background:var(--bg);width:100%;max-width:44rem;max-height:min(92vh,calc(100vh - env(safe-area-inset-top,0px) - .75rem));
 border-radius:var(--rl) var(--rl) 0 0;padding:.5rem .9rem calc(.9rem + env(safe-area-inset-bottom));
 display:flex;flex-direction:column;box-shadow:0 -12px 40px rgba(0,0,0,.28);
 animation:sheetin var(--d-sheet) var(--ease-drawer);
@@ -385,6 +392,8 @@ animation:fade var(--d-fast) var(--ease-out),overpulse 1.6s ease-in-out .4s 3}
 @keyframes overpulse{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--quad) 35%,transparent)}}
 .rb-hint{font-size:.78rem;font-weight:600;opacity:.8}
 body.resting main{padding-bottom:11rem}
+/* Tastatur offen: Leiste sitzt direkt über der Tastatur statt dahinter (Wert kommt aus visualViewport) */
+body.kbd .restbar{bottom:calc(var(--kb,0px) + .5rem);transition:bottom var(--d-ui) var(--ease-out),transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--ease-out)}
 body.resting .toast{bottom:8.6rem}
 
 /* ============ Diagramme ============ */
@@ -465,7 +474,8 @@ nav.tabs{view-transition-name:tabs}
 ::view-transition-new(root){animation:vt-in var(--d-ui) var(--ease-out)}
 @keyframes vt-out{to{opacity:0}}
 @keyframes vt-in{from{opacity:0;transform:translateY(6px)}}
-::view-transition-group(tabs),::view-transition-group(rest),::view-transition-group(toast){animation:none}
+#sbar{view-transition-name:sbar}
+::view-transition-group(tabs),::view-transition-group(rest),::view-transition-group(toast),::view-transition-group(sbar){animation:none}
 </style>
 </head>
 <body>
@@ -473,6 +483,7 @@ nav.tabs{view-transition-name:tabs}
 <nav class="tabs" id="tabs"></nav>
 <div class="toast" id="toast"></div>
 <div id="rest"></div>
+<div id="sbar" aria-hidden="true"></div>
 <script>
 (function(){
 'use strict';
@@ -734,9 +745,9 @@ function foldCard(w,ei,force){
   else card.classList.remove('folded','just');
   return on&&!was;}
 function scrollNext(ei){
-  var cards=document.querySelectorAll('.card.entry');
+  var cards=document.querySelectorAll('.card.entry'),hd=document.querySelector('.sticky'),off=(hd?hd.offsetHeight:108)+12;
   for(var i=ei+1;i<cards.length;i++){if(cards[i].offsetParent===null)continue;
-    var y=cards[i].getBoundingClientRect().top+(window.pageYOffset||0)-120;
+    var y=cards[i].getBoundingClientRect().top+(window.pageYOffset||0)-off;
     try{window.scrollTo({top:y,behavior:'smooth'});}catch(e){window.scrollTo(0,y);}
     return;}}
 /* Satz erledigt: gemeinsamer Ablauf für Haken und Zeile-verlassen */
@@ -840,6 +851,15 @@ function drawRest(){
   if(mode==='on'){var l=restLeft(),tE=document.getElementById('rtime'),fE=document.getElementById('rfill');
     if(tE)tE.textContent=(rest.paused?'❚❚ ':'')+fmtT(l);
     if(fE)fE.style.transform='scaleX('+(rest.dur?Math.max(0,Math.min(1,l/rest.dur)):0).toFixed(3)+')';}}
+
+/* Tastatur erkennen: sichtbarer Bereich (visualViewport) kleiner als das Layout = verdeckter Teil unten */
+function kbSync(){
+  var vv=window.visualViewport;if(!vv)return;
+  var lh=document.documentElement.clientHeight,kb=Math.round(lh-vv.height-vv.offsetTop),open=kb>80;
+  document.body.style.setProperty('--kb',(open?kb:0)+'px');
+  document.body.classList.toggle('kbd',open);}
+if(window.visualViewport){var _kbRaf=0;var kbQ=function(){cancelAnimationFrame(_kbRaf);_kbRaf=requestAnimationFrame(kbSync);};
+  window.visualViewport.addEventListener('resize',kbQ);window.visualViewport.addEventListener('scroll',kbQ);}
 
 /* ---------- Ton, Vibration, Bildschirm ---------- */
 var AC=null;
@@ -1036,6 +1056,7 @@ function renderNow(){
   if(ui.picker)h+=renderPicker();
   app.innerHTML=h;
   app.classList.toggle('entered',_entered);
+  document.body.classList.toggle('wk',!!app.querySelector('.sticky'));
   document.body.classList.toggle('kurz',!!(S.active&&view==='home'&&S.active.kurz));
   var t=[['home','Heute'],['plan','Plan'],['cal','Kalender'],['ex','Übungen'],['more','Mehr']];
   updateWake();
@@ -1368,7 +1389,7 @@ document.addEventListener('click',function(ev){
     if(d.uni!==undefined){var e=w.entries[+d.uni];e.uni=!e.uni;save();render();return;}
     if(d.setplus!==undefined){w.entries[+d.setplus].sets.push(emptySet());save();render();return;}
     if(d.setminus!==undefined){var ss=w.entries[+d.setminus].sets;if(ss.length>1)ss.pop();save();render();return;}
-    if(d.copy!==undefined){var en=w.entries[+d.copy];var p=lastPerf(en.exId,en.uni,w.id);if(p){en.sets=p.sets.map(function(s){return {w:s.w,r:s.r,rir:'',note:''};});save();render();}return;}
+    if(d.copy!==undefined){var en=w.entries[+d.copy];var p=lastPerf(en.exId,en.uni,w.id);if(p){en.sets=p.sets.map(function(s){return {w:s.w,r:s.r,rir:'',note:'',done:false};});save();render();}return;}
     if(d.persist!==undefined){var en2=w.entries[+d.persist];var sl2=slotById(sessionById(w.sessionId),en2.slotId);if(sl2){sl2.exId=en2.exId;sl2.uni=en2.uni;sl2.muscle=ex(en2.exId).muscle;sl2.repMin=en2.repMin;sl2.repMax=en2.repMax;save();render();toast('Plan aktualisiert');}return;}
     if(d.edel!==undefined){var ri=+d.edel,re=w.entries.splice(ri,1)[0],rw=w;save();render();
       toastUndo('Übung entfernt',function(){rw.entries.splice(Math.min(ri,rw.entries.length),0,re);});return;}
