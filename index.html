@@ -25,6 +25,9 @@
 --fs-sub:.88rem;--fs-fn:.76rem;--fs-c1:.71rem;--fs-c2:.65rem;
 /* Schriftstärken (F10, Nutzerwunsch „schlanker"): große Zahlen und Überschriften. Kleine Etiketten bleiben kräftig, sonst leidet die Lesbarkeit. */
 --fw-num:400;--fw-head:600;
+/* Masken-Icons für Pseudo-Elemente (Block H): Farbe kommt aus background, Form aus der Maske */
+--i-chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 5.5 16 12l-6.5 6.5'/%3E%3C/svg%3E");
+--i-check:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.6l4.4 4.4L19 7.4'/%3E%3C/svg%3E");
 --bg:#F2F3EE;--ink:#151A1F;--mute:#5E6870;--line:#E0E3DC;--soft:#EAEDE6;--card:#FFFFFF;
 --sheet:#F2F3EE;--cardline:transparent;--seg:#FFFFFF;
 --glass:rgba(242,243,238,.82);
@@ -173,6 +176,14 @@ nav.tabs button{flex:1;position:relative;background:none;border:none;box-shadow:
 font-size:var(--fs-c2);font-weight:700;letter-spacing:.03em;padding:.5rem .2rem .35rem;
 display:flex;flex-direction:column;align-items:center;gap:.18rem;border-radius:var(--rs)}
 nav.tabs button svg{width:22px;height:22px;display:block}
+/* Linien-Icons (Block H): 24er-Raster, Strich 1,7, Farbe = Textfarbe */
+svg.i{width:1.15em;height:1.15em;display:inline-block;flex:none;vertical-align:-.2em}
+.chk svg.i{width:1.25rem;height:1.25rem;stroke-width:2.4}
+button.icon svg.i{width:1.3rem;height:1.3rem}
+button.icon.tiny svg.i{width:1rem;height:1rem;stroke-width:2}   /* Plan-Kopf: so groß wie das Duplizieren-Icon daneben */
+.restbar b svg.i,.kb-t svg.i{width:.7em;height:.7em;vertical-align:0;margin-right:.2em}
+.chev-w svg.i{transition:transform var(--d-ui) var(--ease-out)}
+.chev-w.open svg.i{transform:rotate(90deg)}
 nav.tabs button.on{color:var(--ink)}
 nav.tabs button.on::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
 width:1.7rem;height:2px;border-radius:0 0 2px 2px;background:var(--ink)}
@@ -201,8 +212,8 @@ flex:none;animation:pulse 1.8s ease-in-out infinite}
 padding:.85rem 2.3rem .85rem .95rem;background:var(--card);border:1px solid var(--cardline);
 border-radius:var(--rm);box-shadow:var(--sh)}
 .session-btn b{display:block;font-family:var(--display);font-size:var(--fs-t2);font-weight:var(--fw-head);line-height:1.1}
-.session-btn::after{content:"›";position:absolute;right:1rem;top:50%;transform:translateY(-50%);
-font-size:var(--fs-t1);line-height:1;color:var(--mute)}
+.session-btn::after{content:"";position:absolute;right:.85rem;top:50%;transform:translateY(-50%);width:1.3rem;height:1.3rem;
+background:var(--mute);-webkit-mask:var(--i-chev) center/contain no-repeat;mask:var(--i-chev) center/contain no-repeat}
 .session-btn.next{border-color:var(--ink);box-shadow:var(--sh-lift)}
 .session-btn.next::before{content:"Nächste";position:absolute;top:-.55rem;left:.9rem;
 background:var(--ink);color:var(--bg);font-size:var(--fs-c2);font-weight:700;text-transform:uppercase;
@@ -380,7 +391,8 @@ transform-origin:left;transform:scaleX(0);transition:transform var(--d-sheet) va
 .entry.folded .exname{margin-bottom:.25rem}
 .entry.folded::after{content:attr(data-sum);display:block;margin-top:.35rem;font-size:var(--fs-sub);
 font-weight:600;color:var(--quad);font-variant-numeric:tabular-nums}
-.entry.folded .exname::after{content:" \2713";color:var(--quad)}
+.entry.folded .exname::after{content:"";display:inline-block;width:.8em;height:.8em;margin-left:.3em;vertical-align:-.02em;
+background:var(--quad);-webkit-mask:var(--i-check) center/contain no-repeat;mask:var(--i-check) center/contain no-repeat}
 
 /* ============ Pausentimer ============ */
 .restbar{position:fixed;left:.6rem;right:.6rem;bottom:calc(3.7rem + env(safe-area-inset-bottom));
@@ -475,8 +487,8 @@ body.dragging{-webkit-user-select:none;user-select:none;overscroll-behavior:none
 .sess .ssum{display:none;margin:.2rem 0 0 2.2rem}
 .sess.closed .ssum{display:block}
 .sess.closed .sbody{display:none}
-.sess .chev{transition:transform var(--d-ui) var(--ease-out)}
-.sess.closed .chev{transform:rotate(-90deg)}
+.sess .chev{transition:transform var(--d-ui) var(--ease-out);transform:rotate(90deg)}
+.sess.closed .chev{transform:none}
 .sess.closed{padding-bottom:.7rem}
 .slot.ss{border-bottom:2px dashed var(--acc)}
 .pill.ss{background:var(--ink);color:var(--bg)}
@@ -495,14 +507,15 @@ body.dragging{-webkit-user-select:none;user-select:none;overscroll-behavior:none
 .segc button{min-height:34px;padding:0 .75rem;border:0;border-radius:var(--rs);background:transparent;box-shadow:none;
 color:var(--mute);font-size:var(--fs-fn);font-weight:600}
 .segc button.on{background:var(--seg);color:var(--ink);box-shadow:var(--sh)}
-.chip{min-height:34px;padding:0 .8rem;border-radius:2rem;background:var(--card);border:1px solid var(--line);
+.chip{display:inline-flex;align-items:center;gap:.3rem;min-height:34px;padding:0 .8rem;border-radius:2rem;background:var(--card);border:1px solid var(--line);
 color:var(--mute);font-size:var(--fs-fn);font-weight:600}
 .chip.on{background:var(--accsoft);border-color:var(--acc);color:var(--acc)}
 
 /* ============ Zurück im iOS-Stil (Übungsdetail, V7) ============ */
-.navback{display:inline-flex;align-items:center;min-height:44px;margin:-.4rem 0 -.5rem -.15rem;padding:0 .15rem;
+.navback{display:inline-flex;align-items:center;gap:.1rem;min-height:44px;margin:-.4rem 0 -.5rem -.15rem;padding:0 .15rem;
 background:none;border:0;box-shadow:none;color:var(--acc);font-size:var(--fs-body);font-weight:400}
 .navback:active{opacity:.5;transform:none}
+.navback svg.i{width:1.45em;height:1.45em;stroke-width:2;margin-left:-.4em}
 
 /* ============ Gruppierte Liste (Einstellungen) ============ */
 .group{background:var(--card);border:1px solid var(--cardline);border-radius:var(--rm);box-shadow:var(--sh);margin:.65rem 0;overflow:hidden}
@@ -651,7 +664,19 @@ var WD=['Mo','Di','Mi','Do','Fr','Sa','So'];
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function mpill(m){return '<span class="pill m" data-m="'+esc(m)+'">'+esc(m)+'</span>';}
 var ICO={home:'<path d="M4 10.8 12 4.2l8 6.6V20a1 1 0 0 1-1 1h-4.2v-5.6H9.2V21H5a1 1 0 0 1-1-1z"/>',plan:'<path d="M4 6.5h16M4 12h16M4 17.5h10"/>',cal:'<rect x="3.4" y="5.2" width="17.2" height="15.4" rx="2.6"/><path d="M3.4 10.2h17.2M8 3.2v3.6M16 3.2v3.6"/>',ex:'<rect x="4.1" y="8.5" width="3.3" height="7" rx="1.1"/><rect x="16.6" y="8.5" width="3.3" height="7" rx="1.1"/><path d="M7.4 12h9.2M2.2 10.6v2.8M21.8 10.6v2.8"/>',more:'<circle cx="5.5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.5" fill="currentColor" stroke="none"/>'};
-function ico(k){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICO[k]+'</svg>';}
+/* Block H: ein Symbolsatz statt Textzeichen (C4). Aktive Tabs gefüllt (N2), Plan mit dickerem Strich. */
+ICO.x='<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>';
+ICO.swap='<path d="M4.5 8.5h14M15 5l3.5 3.5L15 12M19.5 15.5h-14M9 12l-3.5 3.5L9 19"/>';
+ICO.chevL='<path d="M14.5 5.5 8 12l6.5 6.5"/>';
+ICO.chevR='<path d="M9.5 5.5 16 12l-6.5 6.5"/>';
+ICO.pause='<rect x="6.8" y="5.5" width="3.4" height="13" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.8" y="5.5" width="3.4" height="13" rx="1.2" fill="currentColor" stroke="none"/>';
+ICO.check='<path d="M5 12.6l4.4 4.4L19 7.4"/>';
+var ICO_ON={home:'<path d="M4 10.8 12 4.2l8 6.6V20a1 1 0 0 1-1 1h-4.2v-5.6H9.2V21H5a1 1 0 0 1-1-1z" fill="currentColor"/>',
+  plan:'<path d="M4 6.5h16M4 12h16M4 17.5h10" stroke-width="2.6"/>',
+  cal:'<path d="M6 5.2h12a2.6 2.6 0 0 1 2.6 2.6v1.6H3.4V7.8A2.6 2.6 0 0 1 6 5.2zM3.4 11h17.2v7a2.6 2.6 0 0 1-2.6 2.6H6A2.6 2.6 0 0 1 3.4 18z" fill="currentColor" stroke="none"/><path d="M8 3.2v3.6M16 3.2v3.6"/>',
+  ex:'<rect x="4.1" y="8.5" width="3.3" height="7" rx="1.1" fill="currentColor"/><rect x="16.6" y="8.5" width="3.3" height="7" rx="1.1" fill="currentColor"/><path d="M7.4 12h9.2M2.2 10.6v2.8M21.8 10.6v2.8" stroke-width="2.3"/>',
+  more:'<circle cx="5.5" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="2" fill="currentColor" stroke="none"/>'};
+function ico(k,cls,on){return '<svg class="i'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+((on&&ICO_ON[k])||ICO[k])+'</svg>';}
 /* Hell/Dunkel folgt dem System (V5). Hier wird nur die Browserfarbe nachgeführt, auch bei einem Wechsel im laufenden Betrieb. */
 var _mqDark=window.matchMedia?window.matchMedia('(prefers-color-scheme:dark)'):null;
 function applyTheme(){var dark=!!(_mqDark&&_mqDark.matches);
@@ -736,7 +761,7 @@ function chips(list,cur,attr){return '<div class="chips">'+list.map(function(c){
 /* Segment beidseitig / je Seite (V10): zeigt den Zustand, ein Tipp setzt den Wert statt umzuschalten */
 function uniSeg(attr,key,on){return '<span class="segc">'+[['0','beidseitig'],['1','je Seite']].map(function(o){return '<button data-'+attr+'="'+key+'" data-val="'+o[0]+'" class="'+((o[0]==='1')===!!on?'on':'')+'">'+o[1]+'</button>';}).join('')+'</span>';}
 /* Häkchen-Chip für An/Aus-Eigenschaften (Anker, Supersatz) */
-function tickChip(attr,key,on,label){return '<button class="chip'+(on?' on':'')+'" data-'+attr+'="'+key+'">'+(on?'✓ ':'')+label+'</button>';}
+function tickChip(attr,key,on,label){return '<button class="chip'+(on?' on':'')+'" data-'+attr+'="'+key+'">'+(on?ico('check'):'')+label+'</button>';}
 function muscleChips(cur,attr){return chips([['','Alle']].concat(MUSCLES.map(function(m){return [m,m];})),cur,attr);}
 
 /* ---------- Picker ---------- */
@@ -827,7 +852,7 @@ function updateProgress(){var w=wctx();if(!w)return;var p=progOf(w);
 function syncRow(w,ei,si){
   var st=w.entries[ei].sets[si],dn=isDone(st);
   var btn=document.querySelector('button[data-done="'+ei+'.'+si+'"]');
-  if(btn){btn.textContent=dn?'\u2713':(si+1);var tr=btn.parentNode.parentNode;
+  if(btn){btn.innerHTML=dn?ico('check'):(si+1);btn.setAttribute('aria-label','Satz '+(si+1)+(dn?' erledigt':' abhaken'));var tr=btn.parentNode.parentNode;
     if(tr){var wasDn=tr.classList.contains('done');tr.classList.toggle('done',dn);if(dn&&!wasDn)btn.classList.add('just');if(!dn)btn.classList.remove('just');}}
   var wi=document.querySelector('input[data-set="'+ei+'.'+si+'.w"]');if(wi&&wi.value!==st.w)wi.value=st.w;
   var ri=document.querySelector('input[data-set="'+ei+'.'+si+'.r"]');if(ri&&ri.value!==st.r)ri.value=st.r;}
@@ -951,15 +976,15 @@ function drawRest(){
   document.body.classList.add('resting');
   if(rest.mode!==mode){rest.mode=mode;
     host.innerHTML=mode==='on'
-      ?'<div class="restbar"><button class="rb-b" data-rest="m30">−30</button><div class="rb-main" data-rest="pause"><b id="rtime">0:00</b><div class="rb-p"><i id="rfill"></i></div></div><button class="rb-b" data-rest="p30">+30</button><button class="rb-b rb-x" data-rest="skip">✕</button></div>'
-      :'<div class="restbar over" data-rest="skip"><div class="rb-main"><b id="rover">+0:00</b><span class="rb-hint">Pause vorbei</span></div><span class="rb-x">✕</span></div>';}
+      ?'<div class="restbar"><button class="rb-b" data-rest="m30" aria-label="30 Sekunden weniger">−30</button><div class="rb-main" data-rest="pause" role="button" aria-label="Pause anhalten oder fortsetzen"><b id="rtime">0:00</b><div class="rb-p"><i id="rfill"></i></div></div><button class="rb-b" data-rest="p30" aria-label="30 Sekunden mehr">+30</button><button class="rb-b rb-x" data-rest="skip" aria-label="Pause beenden">'+ico('x')+'</button></div>'
+      :'<div class="restbar over" data-rest="skip" role="button"><div class="rb-main"><b id="rover">+0:00</b><span class="rb-hint">Pause vorbei</span></div><span class="rb-x">'+ico('x')+'</span></div>';}
   /* Zeitkapsel in der Stepper-Leiste bekommt dieselbe Zeit */
   var kE=document.getElementById('kbtime'),txt;
   if(mode==='on'){var l=restLeft(),tE=document.getElementById('rtime'),fE=document.getElementById('rfill');
-    txt=(rest.paused?'❚❚ ':'')+fmtT(l);if(tE)tE.textContent=txt;
+    txt=(rest.paused?ico('pause'):'')+fmtT(l);if(tE)tE.innerHTML=txt;
     if(fE)fE.style.transform='scaleX('+(rest.dur?Math.max(0,Math.min(1,l/rest.dur)):0).toFixed(3)+')';}
   else{var oE=document.getElementById('rover');txt='+'+fmtT(Math.max(0,Math.floor((Date.now()-rest.over)/1000)));if(oE)oE.textContent=txt;}
-  if(kE){kE.textContent=txt;kE.classList.toggle('over',mode==='over');}
+  if(kE){kE.innerHTML=txt;kE.classList.toggle('over',mode==='over');}
   kbSyncBar();}
 
 /* Tastatur erkennen: sichtbarer Bereich (visualViewport) kleiner als das Layout = verdeckter Teil unten */
@@ -982,8 +1007,8 @@ function kbTrack(){
   var k=(a&&(a[2]==='w'||a[2]==='r')&&wctx())?a[0]+'|'+a[1]+'|'+a[2]:null;
   if(k!==kbKey){kbKey=k;
     if(k){var kg=a[2]==='w',s=kg?'2.5':'1',lb=kg?'2,5':'1',b=bar.querySelectorAll('.kb-b');
-      b[0].setAttribute('data-stp',k+'|-'+s);b[0].textContent='−'+lb;
-      b[1].setAttribute('data-stp',k+'|'+s);b[1].textContent='+'+lb;
+      b[0].setAttribute('data-stp',k+'|-'+s);b[0].textContent='−'+lb;b[0].setAttribute('aria-label',kg?'2,5 kg weniger':'1 Wiederholung weniger');
+      b[1].setAttribute('data-stp',k+'|'+s);b[1].textContent='+'+lb;b[1].setAttribute('aria-label',kg?'2,5 kg mehr':'1 Wiederholung mehr');
       document.getElementById('kb_u').textContent=kg?'kg':'Wdh';
       if(document.body.classList.contains('kbon'))kbRevealSoon();}}
   kbSyncBar();}
@@ -1148,7 +1173,7 @@ function ssRole(w,ei){
 
 /* ---------- Drag & Drop (Pointer Events) ---------- */
 var drag=null;
-var GRIP='<svg viewBox="0 0 10 16" fill="currentColor"><circle cx="2.5" cy="2.5" r="1.6"/><circle cx="7.5" cy="2.5" r="1.6"/><circle cx="2.5" cy="8" r="1.6"/><circle cx="7.5" cy="8" r="1.6"/><circle cx="2.5" cy="13.5" r="1.6"/><circle cx="7.5" cy="13.5" r="1.6"/></svg>';
+var GRIP='<svg viewBox="0 0 10 16" fill="currentColor" aria-hidden="true"><circle cx="2.5" cy="2.5" r="1.6"/><circle cx="7.5" cy="2.5" r="1.6"/><circle cx="2.5" cy="8" r="1.6"/><circle cx="7.5" cy="8" r="1.6"/><circle cx="2.5" cy="13.5" r="1.6"/><circle cx="7.5" cy="13.5" r="1.6"/></svg>';
 function dragItems(cont){return Array.prototype.slice.call(cont.children).filter(function(c){return c.hasAttribute('data-dragitem');});}
 document.addEventListener('pointerdown',function(ev){
   var h=ev.target.closest('[data-drag]');if(!h)return;
@@ -1220,7 +1245,7 @@ function renderNow(){
   document.body.classList.toggle('kurz',!!(S.active&&view==='home'&&S.active.kurz));
   var t=[['home','Heute'],['plan','Plan'],['cal','Kalender'],['ex','Übungen'],['more','Mehr']];
   updateWake();
-  document.getElementById('tabs').innerHTML=t.map(function(x){return '<button data-tab="'+x[0]+'" class="'+(view===x[0]?'on':'')+'">'+ico(x[0])+'<span>'+x[1]+'</span></button>';}).join('');
+  document.getElementById('tabs').innerHTML=t.map(function(x){return '<button data-tab="'+x[0]+'" class="'+(view===x[0]?'on':'')+'">'+ico(x[0],'',view===x[0])+'<span>'+x[1]+'</span></button>';}).join('');
   kbTrack();   /* Neuaufbau kann das fokussierte Feld entfernen: Leiste neu bewerten */
 }
 function renderHome(){
@@ -1279,7 +1304,7 @@ function renderWorkout(a,isActive){
     var prBase=bestEver(e.exId,e.uni,a.id),hasPR=prBase>0&&e.sets.some(function(st){return isDone(st)&&e1(st)>prBase*1.001;});
     var allDone=e.sets.length>0&&e.sets.every(isDone);var role=ssRole(a,ei);
     h+='<div class="card entry'+(sl&&sl.anker?' anker':'')+(isActive&&allDone?' folded':'')+(role==='a'?' ssA':role==='b'?' ssB':'')+'" data-m="'+esc(x.muscle)+'" data-sum="'+esc(fmtSets(e.sets.filter(filled))||'erledigt')+'">';
-    h+='<div class="row click" data-fold="'+ei+'"><div class="grow"><span class="exname">'+esc(x.name)+'</span> '+(sl&&sl.anker?'<span class="pill a">Anker</span>':'')+' '+mpill(x.muscle)+' <span class="pill">'+esc(x.equip)+'</span>'+(hasPR?' <span class="pill pr">PR</span>':'')+(role?' <span class="pill ss">Supersatz '+(role==='a'?'1/2':'2/2')+'</span>':'')+'</div><button class="tiny danger" data-edel="'+ei+'" title="Übung aus dieser Einheit entfernen">✕</button></div>';
+    h+='<div class="row click" data-fold="'+ei+'"><div class="grow"><span class="exname">'+esc(x.name)+'</span> '+(sl&&sl.anker?'<span class="pill a">Anker</span>':'')+' '+mpill(x.muscle)+' <span class="pill">'+esc(x.equip)+'</span>'+(hasPR?' <span class="pill pr">PR</span>':'')+(role?' <span class="pill ss">Supersatz '+(role==='a'?'1/2':'2/2')+'</span>':'')+'</div><button class="tiny danger" data-edel="'+ei+'" aria-label="Übung entfernen">'+ico('x')+'</button></div>';
     h+='<div class="ebody"><div>';
     h+='<div class="row" style="margin-top:.35rem"><button class="tiny" data-swap="'+ei+'">Übung tauschen</button>'+uniSeg('uni',ei,e.uni);
     if(sl&&!planned)h+='<button class="tiny acc" data-persist="'+ei+'">Dauerhaft im Plan</button>';
@@ -1288,7 +1313,7 @@ function renderWorkout(a,isActive){
     if(x.cue)h+='<div class="cue"><b>Ausführung:</b> '+esc(x.cue)+'</div>';
     if(planned&&sl.note)h+='<div class="cue"><b>Plan:</b> '+esc(sl.note)+'</div>';
     if(sl){var alts=[sl.exId].concat(sl.alt||[]).filter(function(q){return q!==e.exId&&S.exercises[q];});
-      if(alts.length)h+='<div class="rots"><span class="lbl">Rotation</span>'+alts.map(function(aid){return '<span class="rot"><button data-wrot="'+ei+'|'+esc(aid)+'">'+esc(ex(aid).name)+' ⇄</button></span>';}).join('')+'</div>';}
+      if(alts.length)h+='<div class="rots"><span class="lbl">Rotation</span>'+alts.map(function(aid){return '<span class="rot"><button data-wrot="'+ei+'|'+esc(aid)+'">'+esc(ex(aid).name)+' '+ico('swap')+'</button></span>';}).join('')+'</div>';}
     if(x.note)h+='<div class="cue"><b>Deine Notiz:</b> '+esc(x.note)+'</div>';
     h+='<p class="last">'+(perf?'Letztes Mal ('+fmtDate(perf.date)+'): '+esc(fmtSets(perf.sets)):'Noch keine Daten für diese Variante.')+'</p>';
     if(perf&&perf.note)h+='<div class="notebox">Notiz letztes Mal: '+esc(perf.note)+'</div>';
@@ -1298,14 +1323,14 @@ function renderWorkout(a,isActive){
       var ph=perf&&perf.sets[si]?perf.sets[si]:null;var dn=isDone(st);
       var isPR=dn&&prBase>0&&e1(st)>prBase*1.001;
       h+='<tr class="setrow'+(dn?' done':'')+(isPR?' pr':'')+'">';
-      h+='<td class="n"><button class="chk" data-done="'+ei+'.'+si+'" title="Satz erledigt">'+(dn?'\u2713':(si+1))+'</button></td>';
+      h+='<td class="n"><button class="chk" data-done="'+ei+'.'+si+'" aria-label="Satz '+(si+1)+(dn?' erledigt':' abhaken')+'">'+(dn?ico('check'):(si+1))+'</button></td>';
       h+='<td class="w"><input type="number" step="0.5" inputmode="decimal" data-set="'+ei+'.'+si+'.w" value="'+esc(st.w)+'" placeholder="'+(ph?esc(ph.w):'')+'"></td>';
       h+='<td class="r"><input type="number" inputmode="numeric" data-set="'+ei+'.'+si+'.r" value="'+esc(st.r)+'" placeholder="'+(ph?esc(ph.r):'')+'"></td>';
       h+='<td class="rir"><input type="number" inputmode="numeric" data-set="'+ei+'.'+si+'.rir" value="'+esc(st.rir)+'" placeholder="'+(ph&&ph.rir!==''?esc(ph.rir):'')+'"></td>';
-      h+='<td class="nt"><button class="nb'+(st.note?' has':'')+'" data-noteopen="'+ei+'.'+si+'" title="Notiz zum Satz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4.2L19 9.2a2.1 2.1 0 0 0-3-3L5.2 17z"/></svg></button></td></tr>';
+      h+='<td class="nt"><button class="nb'+(st.note?' has':'')+'" data-noteopen="'+ei+'.'+si+'" aria-label="Notiz zu Satz '+(si+1)+'"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4.2L19 9.2a2.1 2.1 0 0 0-3-3L5.2 17z"/></svg></button></td></tr>';
       h+='<tr class="noterow'+(st.note?' on':'')+'" data-nr="'+ei+'.'+si+'"><td></td><td colspan="4"><input type="text" data-set="'+ei+'.'+si+'.note" value="'+esc(st.note)+'" placeholder="Notiz zum Satz"></td></tr>';
     });
-    h+='</tbody></table><div class="row"><button class="icon" data-setminus="'+ei+'">−</button><button class="icon" data-setplus="'+ei+'">+</button><span class="mute small">Sätze</span>';
+    h+='</tbody></table><div class="row"><button class="icon" data-setminus="'+ei+'" aria-label="Satz entfernen">−</button><button class="icon" data-setplus="'+ei+'" aria-label="Satz hinzufügen">+</button><span class="mute small">Sätze</span>';
     if(perf)h+='<span class="grow"></span><button class="tiny" data-copy="'+ei+'">Letzte Werte übernehmen</button>';
     h+='</div><textarea data-enote="'+ei+'" placeholder="Notiz zur Übung heute (Gefühl, Gerät, Technik…)">'+esc(e.note)+'</textarea></div></div></div>';
   });
@@ -1313,7 +1338,7 @@ function renderWorkout(a,isActive){
   if(isActive)h+='<div class="card"><label class="small">Einheit</label>'+dn('0')+'<label class="small" style="margin-top:.75rem">Notiz</label><textarea data-wnote="1" placeholder="Schlaf, Energie, Gym voll, was auch immer relevant ist">'+esc(a.note)+'</textarea></div>';
   else h+='<div class="card"><label class="small">Notiz zur Einheit</label><textarea data-wnote="1" placeholder="Schlaf, Energie, Gym voll, was auch immer relevant ist">'+esc(a.note)+'</textarea></div>';
   if(isActive){
-    if(ui.finish){h+='<div class="card"><b>Einheit beenden?</b><p class="small mute">Speichern übernimmt alles, was eingetragen ist, auch wenn Übungen offen sind. Leere Sätze werden ignoriert.</p><div class="row"><button class="primary grow" data-act="finishsave">Speichern</button><button class="danger" data-act="finishdiscard">Verwerfen</button><button data-act="finishback">Weitertrainieren</button></div></div>';}
+    if(ui.finish){h+='<div class="card"><b>Einheit beenden?</b><p class="small mute">Speichern übernimmt alles, was eingetragen ist, auch wenn Übungen offen sind. Leere Sätze werden ignoriert.</p><div class="row"><button class="primary grow" data-act="finishsave">Speichern</button></div><div class="row" style="margin-top:.5rem"><button class="grow" data-act="finishback">Weitertrainieren</button></div><div class="row" style="margin-top:1.6rem"><button class="danger grow" data-act="finishdiscard">Verwerfen</button></div></div>';}   /* untereinander wie ein iOS-Dialog, Verwerfen abgesetzt */
     else h+='<div class="row" style="margin-top:1rem"><button class="primary grow" data-act="finish">Einheit beenden</button></div>';
   }else{
     h+='<div class="row" style="margin-top:1rem"><button class="primary grow" data-act="editdone">Fertig</button></div>';
@@ -1327,17 +1352,17 @@ function renderPlan(){
   h+='<details><summary>Anderen Split laden</summary><p class="small mute">Ersetzt den aktuellen Plan komplett. Historie und Übungen bleiben.</p><div class="row"><select id="tplsel" class="grow">'+Object.keys(TEMPLATES).map(function(k){return '<option value="'+k+'">'+esc(TEMPLATES[k].name)+'</option>';}).join('')+'</select><button data-act="loadtpl">Laden</button></div></details></div>';
   S.sessions.forEach(function(s,si){
     var open=!!ui.planOpen[s.id];
-    h+='<div class="card sess'+(open?'':' closed')+'" data-dragitem="1" data-sid="'+s.id+'"><div class="row"><span class="drag" data-drag="sess" title="Ziehen zum Sortieren">'+GRIP+'</span><input data-sname="'+s.id+'" value="'+esc(s.name)+'" style="font-weight:var(--fw-head);font-size:var(--fs-t3)" class="grow"><button class="icon tiny" data-ptog="'+s.id+'" title="Auf- und zuklappen"><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><button class="icon tiny" data-sdup="'+s.id+'" title="Einheit duplizieren"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button><button class="tiny danger" data-sdel="'+s.id+'">✕</button></div>';
+    h+='<div class="card sess'+(open?'':' closed')+'" data-dragitem="1" data-sid="'+s.id+'"><div class="row"><span class="drag" data-drag="sess" role="img" aria-label="Ziehen zum Sortieren">'+GRIP+'</span><input data-sname="'+s.id+'" value="'+esc(s.name)+'" style="font-weight:var(--fw-head);font-size:var(--fs-t3)" class="grow"><button class="icon tiny" data-ptog="'+s.id+'" aria-label="Übungen anzeigen" aria-expanded="'+open+'">'+ico('chevR','chev')+'</button><button class="icon tiny" data-sdup="'+s.id+'" aria-label="Einheit duplizieren"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button><button class="tiny danger" data-sdel="'+s.id+'" aria-label="Einheit aus dem Plan löschen">'+ico('x')+'</button></div>';
     h+='<div class="ssum small mute">'+s.slots.length+' Übungen'+(s.tag?' · '+esc(s.tag):'')+'</div>';
     h+='<div class="sbody"><input data-stag="'+s.id+'" value="'+esc(s.tag)+'" placeholder="Kurzbeschreibung" class="small" style="margin:.4rem 0">';
     s.slots.forEach(function(sl,i){
       var x=ex(sl.exId);
-      h+='<div class="slot'+(sl.ss&&i<s.slots.length-1?' ss':'')+'" data-dragitem="1" data-slid="'+sl.id+'" data-m="'+esc(x.muscle)+'"><div class="row"><span class="drag" data-drag="slot:'+s.id+'" title="Ziehen zum Sortieren">'+GRIP+'</span>'+mpill(x.muscle)+'<span class="pill">'+esc(x.equip)+'</span><span class="grow"></span><button class="tiny danger" data-del="'+s.id+'.'+i+'">✕</button></div>';
-      h+='<button class="exbtn" data-pickplan="'+s.id+'.'+i+'" style="margin:.35rem 0"><span class="n">'+esc(x.name)+'</span><span class="mute small">tauschen ›</span></button>';
+      h+='<div class="slot'+(sl.ss&&i<s.slots.length-1?' ss':'')+'" data-dragitem="1" data-slid="'+sl.id+'" data-m="'+esc(x.muscle)+'"><div class="row"><span class="drag" data-drag="slot:'+s.id+'" role="img" aria-label="Ziehen zum Sortieren">'+GRIP+'</span>'+mpill(x.muscle)+'<span class="pill">'+esc(x.equip)+'</span><span class="grow"></span><button class="tiny danger" data-del="'+s.id+'.'+i+'" aria-label="Übung aus dem Plan entfernen">'+ico('x')+'</button></div>';
+      h+='<button class="exbtn" data-pickplan="'+s.id+'.'+i+'" style="margin:.35rem 0"><span class="n">'+esc(x.name)+'</span><span class="mute small">tauschen '+ico('chevR')+'</span></button>';
       if(x.goal)h+='<p class="small mute" style="margin:0 0 .3rem">'+esc(x.goal)+'</p>';
       h+='<div class="grid3"><div><label class="small">Sätze</label><input type="number" inputmode="numeric" data-pf="'+s.id+'.'+i+'.sets" value="'+sl.sets+'"></div><div><label class="small">Wdh von</label><input type="number" inputmode="numeric" data-pf="'+s.id+'.'+i+'.repMin" value="'+sl.repMin+'"></div><div><label class="small">Wdh bis</label><input type="number" inputmode="numeric" data-pf="'+s.id+'.'+i+'.repMax" value="'+sl.repMax+'"></div></div>';
       h+='<div class="row" style="margin-top:.4rem">'+tickChip('panker',s.id+'.'+i,sl.anker,'Anker')+(x.uniOk?uniSeg('puni',s.id+'.'+i,sl.uni):'')+(i<s.slots.length-1?tickChip('pss',s.id+'.'+i,sl.ss,'Supersatz'):'')+'</div>';
-      h+='<div class="rots"><span class="lbl">Rotation</span>'+(sl.alt||[]).map(function(aid){var ax=ex(aid);return '<span class="rot"><button data-rot="'+s.id+'.'+i+'.'+esc(aid)+'" title="Jetzt in den Plan tauschen">'+esc(ax.name)+' ⇄</button><button data-rotdel="'+s.id+'.'+i+'.'+esc(aid)+'" title="Aus der Rotation entfernen">×</button></span>';}).join('')+'<button class="tiny" data-addalt="'+s.id+'.'+i+'">+ Alternative</button></div>';
+      h+='<div class="rots"><span class="lbl">Rotation</span>'+(sl.alt||[]).map(function(aid){var ax=ex(aid);return '<span class="rot"><button data-rot="'+s.id+'.'+i+'.'+esc(aid)+'" title="Jetzt in den Plan tauschen">'+esc(ax.name)+' '+ico('swap')+'</button><button data-rotdel="'+s.id+'.'+i+'.'+esc(aid)+'" aria-label="'+esc(ax.name)+' aus der Rotation entfernen">'+ico('x')+'</button></span>';}).join('')+'<button class="tiny" data-addalt="'+s.id+'.'+i+'">+ Alternative</button></div>';
       h+='<textarea data-pnote="'+s.id+'.'+i+'" placeholder="Plan-Hinweis nur für diese Einheit (Rotation, Reihenfolge…)" style="margin-top:.4rem">'+esc(sl.note)+'</textarea></div>';
     });
     h+='<div class="row" style="margin-top:.6rem"><button data-addslot="'+s.id+'" class="grow">+ Übung</button></div></div></div>';
@@ -1366,20 +1391,20 @@ function dayClass(d,extra){var i=dayInfo(d);return (extra||'')+(i.gym?' gym':'')
 function dots(d){var i=dayInfo(d);var s='';if(i.running)s+='<i class="r"></i>';i.ws.forEach(function(){s+='<i class="g"></i>';});i.acts.forEach(function(){s+='<i class="a"></i>';});return '<div class="dots">'+s+'</div>';}
 function calMonth(anchor){
   var d=pd(anchor);var y=d.getFullYear(),mo=d.getMonth();var first=new Date(y,mo,1);var off=(first.getDay()+6)%7;var dim=new Date(y,mo+1,0).getDate();
-  var h='<div class="cal-head"><button class="icon" data-calnav="-1">‹</button><b>'+MONTHS[mo]+' '+y+'</b><button class="icon" data-calnav="1">›</button></div><div class="cal-grid">'+WD.map(function(w){return '<div class="wd">'+w+'</div>';}).join('');
+  var h='<div class="cal-head"><button class="icon" data-calnav="-1" aria-label="Vorheriger Monat">'+ico('chevL')+'</button><b>'+MONTHS[mo]+' '+y+'</b><button class="icon" data-calnav="1" aria-label="Nächster Monat">'+ico('chevR')+'</button></div><div class="cal-grid">'+WD.map(function(w){return '<div class="wd">'+w+'</div>';}).join('');
   var start=new Date(y,mo,1-off);
   for(var i=0;i<42;i++){var dd=new Date(start);dd.setDate(start.getDate()+i);var s=ds(dd);var other=dd.getMonth()!==mo;if(i>=35&&other)break;
     h+='<div class="cal-day'+dayClass(s,other?' other':'')+'" data-day="'+s+'">'+dd.getDate()+dots(s)+'</div>';}
   return h+'</div>';
 }
 function calWeek(anchor){
-  var ws=weekStart(anchor);var h='<div class="cal-head"><button class="icon" data-calnav="-1">‹</button><b>Woche ab '+fmtDate(ws)+'</b><button class="icon" data-calnav="1">›</button></div><div class="wk-grid">';
+  var ws=weekStart(anchor);var h='<div class="cal-head"><button class="icon" data-calnav="-1" aria-label="Vorherige Woche">'+ico('chevL')+'</button><b>Woche ab '+fmtDate(ws)+'</b><button class="icon" data-calnav="1" aria-label="Nächste Woche">'+ico('chevR')+'</button></div><div class="wk-grid">';
   for(var i=0;i<7;i++){var s=addDays(ws,i);var inf=dayInfo(s);
     h+='<div class="wk-day'+dayClass(s)+'" data-day="'+s+'"><b>'+WD[i]+' '+s.slice(8)+'</b>'+(inf.running?'<div class="t">läuft</div>':'')+inf.ws.map(function(w){return '<div class="t">'+esc(w.sessionName||'Training')+'</div>';}).join('')+inf.acts.map(function(a){return '<div class="a">'+esc(a.text)+'</div>';}).join('')+'</div>';}
   return h+'</div>';
 }
 function calYear(anchor){
-  var y=pd(anchor).getFullYear();var h='<div class="cal-head"><button class="icon" data-calnav="-1">‹</button><b>'+y+'</b><button class="icon" data-calnav="1">›</button></div><div class="yr">';
+  var y=pd(anchor).getFullYear();var h='<div class="cal-head"><button class="icon" data-calnav="-1" aria-label="Vorheriges Jahr">'+ico('chevL')+'</button><b>'+y+'</b><button class="icon" data-calnav="1" aria-label="Nächstes Jahr">'+ico('chevR')+'</button></div><div class="yr">';
   for(var mo=0;mo<12;mo++){var dim=new Date(y,mo+1,0).getDate();var off=(new Date(y,mo,1).getDay()+6)%7;var mstr=y+'-'+p2(mo+1);
     h+='<div class="mo"><b data-jump="'+mstr+'-01">'+MONTHS[mo].slice(0,3)+' · '+countRange(mstr+'-01',mstr+'-31')+'</b><div class="mg">';
     for(var k=0;k<off;k++)h+='<span></span>';
@@ -1405,13 +1430,13 @@ function dayDetail(d){
   if(inf.running)h+='<div class="card"><b>'+esc(inf.running.sessionName)+'</b> <span class="pill">läuft</span><div class="row" style="margin-top:.4rem"><button class="tiny" data-tab="home">Fortsetzen</button></div></div>';
   inf.ws.forEach(function(w){
     var open=ui.openW===w.id;
-    h+='<div class="card"><div class="row click" data-openw="'+w.id+'"><div class="grow"><b>'+esc(w.sessionName||'Training')+'</b>'+(w.kurz?' <span class="pill a">Kurz</span>':'')+'<div class="small mute">'+w.entries.length+' Übungen · '+setCount(w)+' Sätze</div></div><span class="mute">'+(open?'▾':'▸')+'</span></div>';
+    h+='<div class="card"><div class="row click" data-openw="'+w.id+'" role="button" aria-expanded="'+open+'"><div class="grow"><b>'+esc(w.sessionName||'Training')+'</b>'+(w.kurz?' <span class="pill a">Kurz</span>':'')+'<div class="small mute">'+w.entries.length+' Übungen · '+setCount(w)+' Sätze</div></div><span class="mute chev-w'+(open?' open':'')+'">'+ico('chevR')+'</span></div>';
     if(open){if(w.note)h+='<div class="notebox">'+esc(w.note)+'</div>';
       w.entries.forEach(function(e){var dn=e.sets.filter(filled);h+='<div class="list-item"><b>'+esc(ex(e.exId).name)+'</b>'+(e.uni?' <span class="small mute">je Seite</span>':'')+'<div class="hist-sets">'+(dn.length?esc(fmtSets(dn)):'<span class="mute">nichts eingetragen</span>')+'</div>'+(e.note?'<div class="small mute">'+esc(e.note)+'</div>':'')+e.sets.map(function(x,i){return x.note?'<div class="small mute">Satz '+(i+1)+': '+esc(x.note)+'</div>':'';}).join('')+'</div>';});}
     h+='<div class="row" style="margin-top:.5rem"><button class="tiny primary" data-editw="'+w.id+'">Bearbeiten</button><span class="grow"></span><button class="tiny danger" data-act="wdel" data-id="'+w.id+'">Löschen</button></div></div>';
   });
   inf.acts.forEach(function(a){
-    h+='<div class="card"><label class="small">Aktivität</label><div class="row"><input data-atext="'+a.id+'" value="'+esc(a.text)+'" class="grow" placeholder="z. B. Gravel-Bike"><input type="number" inputmode="numeric" data-amin="'+a.id+'" value="'+esc(a.minutes||'')+'" placeholder="min" style="width:5rem"><button class="tiny danger" data-adel="'+a.id+'">✕</button></div><textarea data-anote="'+a.id+'" placeholder="Notiz" style="margin-top:.4rem">'+esc(a.note||'')+'</textarea></div>';
+    h+='<div class="card"><label class="small">Aktivität</label><div class="row"><input data-atext="'+a.id+'" value="'+esc(a.text)+'" class="grow" placeholder="z. B. Gravel-Bike"><input type="number" inputmode="numeric" data-amin="'+a.id+'" value="'+esc(a.minutes||'')+'" placeholder="min" style="width:5rem"><button class="tiny danger" data-adel="'+a.id+'" aria-label="Aktivität löschen">'+ico('x')+'</button></div><textarea data-anote="'+a.id+'" placeholder="Notiz" style="margin-top:.4rem">'+esc(a.note||'')+'</textarea></div>';
   });
   h+='<div class="row"><button data-act="addact" class="grow">+ Aktivität</button><div class="grow"><select id="pastsel"><option value="">+ Training nachtragen…</option>'+S.sessions.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>';}).join('')+'<option value="__free">Freies Training</option></select></div></div>';
   return h;
@@ -1422,7 +1447,7 @@ function renderExercises(){
   var h='<h1>Übungen</h1>';
   if(ui.exDetail){
     var x=S.exercises[ui.exDetail];if(!x){ui.exDetail=null;return renderExercises();}
-    h='<button class="navback" data-act="exback">‹ Übungen</button><h1 id="ex_h1">'+esc(x.name)+'</h1>';
+    h='<button class="navback" data-act="exback">'+ico('chevL')+'Übungen</button><h1 id="ex_h1">'+esc(x.name)+'</h1>';
     h+='<div class="card"><label class="small">Name</label><input data-xf="name" value="'+esc(x.name)+'">';
     h+='<div class="grid2" style="margin-top:.5rem"><div><label class="small">Muskelgruppe</label><select data-xf="muscle">'+MUSCLES.map(function(m){return '<option'+(m===x.muscle?' selected':'')+'>'+m+'</option>';}).join('')+'</select></div><div><label class="small">Gerät</label><select data-xf="equip">'+EQUIP.map(function(m){return '<option'+(m===x.equip?' selected':'')+'>'+m+'</option>';}).join('')+'</select></div></div>';
     h+='<div class="grid2" style="margin-top:.5rem"><div><label class="small">Wdh-Ziel von</label><input type="number" inputmode="numeric" data-xf="rep0" value="'+x.reps[0]+'"></div><div><label class="small">Wdh-Ziel bis</label><input type="number" inputmode="numeric" data-xf="rep1" value="'+x.reps[1]+'"></div></div>';
