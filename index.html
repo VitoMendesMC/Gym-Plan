@@ -23,6 +23,8 @@
 /* Schriftskala nach iOS (1rem = Body, 17 pt bei Standard-Textgröße) */
 --fs-lt:2rem;--fs-t1:1.65rem;--fs-t2:1.3rem;--fs-t3:1.18rem;--fs-body:1rem;
 --fs-sub:.88rem;--fs-fn:.76rem;--fs-c1:.71rem;--fs-c2:.65rem;
+/* Schriftstärken (F10, Nutzerwunsch „schlanker"): große Zahlen und Überschriften. Kleine Etiketten bleiben kräftig, sonst leidet die Lesbarkeit. */
+--fw-num:500;--fw-head:600;
 --bg:#F2F3EE;--ink:#151A1F;--mute:#5E6870;--line:#E0E3DC;--soft:#EAEDE6;--card:#FFFFFF;
 --sheet:#F2F3EE;--cardline:transparent;
 --glass:rgba(242,243,238,.82);
@@ -74,8 +76,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line
 main{max-width:44rem;margin:0 auto;padding:calc(.9rem + env(safe-area-inset-top,0px)) .9rem 7rem;
 /* Mindestens 1px höher als der Bildschirm: kurze Seiten (Plan, Kalender) verhalten sich wie lange, Tab-Leiste bleibt ruhig */
 min-height:calc(100vh + 1px);min-height:calc(100lvh + 1px)}
-h1{font-family:var(--display);font-size:var(--fs-lt);font-weight:700;line-height:1.05;margin:.5rem 0 .9rem}
-h2{font-family:var(--display);font-size:var(--fs-t2);font-weight:700;line-height:1.15;margin:1.5rem 0 .5rem}
+h1{font-family:var(--display);font-size:var(--fs-lt);font-weight:var(--fw-head);line-height:1.05;margin:.5rem 0 .9rem}
+h2{font-family:var(--display);font-size:var(--fs-t2);font-weight:var(--fw-head);line-height:1.15;margin:1.5rem 0 .5rem}
 h3{display:flex;align-items:center;gap:.45rem;font-size:var(--fs-c1);font-weight:700;text-transform:uppercase;
 letter-spacing:.1em;color:var(--mute);margin:1.5rem 0 .45rem}
 p{margin:.4rem 0}
@@ -101,7 +103,7 @@ button:active,.chk:active,.cal-day:active,.kb-b.press{transform:none!important}
 /* ============ Cards ============ */
 .card{background:var(--card);border:1px solid var(--cardline);border-radius:var(--rm);
 padding:.85rem .95rem;margin:.65rem 0;box-shadow:var(--sh)}
-.card>b:first-child{font-family:var(--display);font-size:var(--fs-t2);font-weight:700}
+.card>b:first-child{font-family:var(--display);font-size:var(--fs-t2);font-weight:var(--fw-head)}
 .card.entry{position:relative;overflow:hidden}
 
 /* ============ Buttons ============ */
@@ -120,7 +122,7 @@ button.icon{width:2.4rem;height:2.4rem;padding:0;font-size:var(--fs-t3);font-wei
 display:inline-flex;align-items:center;justify-content:center}
 button.exbtn{width:100%;text-align:left;background:var(--bg);display:flex;
 justify-content:space-between;align-items:center;gap:.5rem;padding:.6rem .7rem}
-button.exbtn span.n{font-family:var(--display);font-size:var(--fs-t3);font-weight:700}
+button.exbtn span.n{font-family:var(--display);font-size:var(--fs-t3);font-weight:var(--fw-head)}
 button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{
 outline:2px solid var(--acc);outline-offset:2px}
 
@@ -145,7 +147,7 @@ background:var(--soft);color:var(--mute);border:1px solid transparent;white-spac
 .pill.a{background:var(--accsoft);color:var(--acc)}
 
 /* ============ Workout ============ */
-.exname{display:block;font-family:var(--display);font-size:var(--fs-t2);font-weight:700;line-height:1.1;margin-bottom:.4rem}
+.exname{display:block;font-family:var(--display);font-size:var(--fs-t2);font-weight:var(--fw-head);line-height:1.1;margin-bottom:.4rem}
 .last{font-size:var(--fs-sub);color:var(--mute);margin:.5rem 0 .25rem}
 .hint{font-size:var(--fs-sub);color:var(--quad);font-weight:600;background:var(--quadsoft);
 padding:.45rem .6rem;border-radius:var(--rs);margin:.4rem 0}
@@ -198,7 +200,7 @@ flex:none;animation:pulse 1.8s ease-in-out infinite}
 .session-btn{position:relative;display:block;width:100%;text-align:left;margin:.8rem 0;
 padding:.85rem 2.3rem .85rem .95rem;background:var(--card);border:1px solid var(--cardline);
 border-radius:var(--rm);box-shadow:var(--sh)}
-.session-btn b{display:block;font-family:var(--display);font-size:var(--fs-t2);font-weight:700;line-height:1.1}
+.session-btn b{display:block;font-family:var(--display);font-size:var(--fs-t2);font-weight:var(--fw-head);line-height:1.1}
 .session-btn::after{content:"›";position:absolute;right:1rem;top:50%;transform:translateY(-50%);
 font-size:var(--fs-t1);line-height:1;color:var(--mute)}
 .session-btn.next{border-color:var(--ink);box-shadow:var(--sh-lift)}
@@ -241,19 +243,19 @@ margin:.5rem -.9rem;padding:.1rem .9rem;-webkit-overflow-scrolling:touch;
 font-size:var(--fs-c2);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
 .stats span{display:flex;flex-direction:column;gap:.1rem;background:var(--card);
 border:1px solid var(--cardline);border-radius:var(--rm);padding:.55rem .65rem;box-shadow:var(--sh)}
-.stats b{font-family:var(--num);font-size:var(--fs-t1);font-weight:700;line-height:1;
+.stats b{font-family:var(--num);font-size:var(--fs-t1);font-weight:var(--fw-num);line-height:1;
 color:var(--ink);text-transform:none}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin:.6rem 0 .5rem}
-.cal-head b{font-family:var(--display);font-size:var(--fs-t2);font-weight:700}
+.cal-head b{font-family:var(--display);font-size:var(--fs-t2);font-weight:var(--fw-head)}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem}
 .cal-grid .wd{font-size:var(--fs-c2);font-weight:700;text-transform:uppercase;letter-spacing:.06em;
 color:var(--mute);text-align:center;padding-bottom:.2rem}
 .cal-day{aspect-ratio:1;border-radius:var(--rs);border:1.5px solid transparent;background:var(--soft);
 display:flex;flex-direction:column;align-items:center;justify-content:center;
-font-size:var(--fs-sub);font-weight:600;cursor:pointer;position:relative;transition:transform .12s}
+font-size:var(--fs-sub);font-weight:400;cursor:pointer;position:relative;transition:transform .12s}
 .cal-day:active{transform:scale(.92)}
 .cal-day.other{opacity:.3}
-.cal-day.gym{background:var(--quadsoft);color:var(--quad);font-weight:700}
+.cal-day.gym{background:var(--quadsoft);color:var(--quad);font-weight:600}
 .cal-day.today{text-decoration:none;color:var(--acc);box-shadow:inset 0 0 0 1.5px var(--acc)}
 .cal-day.sel{border-color:var(--ink)}
 .cal-day .dots{display:flex;gap:2px;margin-top:3px;height:5px}
@@ -295,7 +297,7 @@ transition:transform var(--d-fast) var(--ease-out)}
 @keyframes sheetin{from{transform:translateY(100%)}}
 .overlay.closing .sheet{transform:translateY(100%)}
 .sheet::before{content:"";width:2.5rem;height:.25rem;border-radius:2rem;background:var(--line);margin:.15rem auto .6rem}
-.sheet>.row b{font-family:var(--display);font-size:var(--fs-t2)}
+.sheet>.row b{font-family:var(--display);font-size:var(--fs-t2);font-weight:var(--fw-head)}
 .sheet .pk-list{overflow-y:auto;flex:1;margin-top:.5rem;-webkit-overflow-scrolling:touch}
 @keyframes fade{from{opacity:0}}
 .pk-item{padding:.6rem .3rem;border-bottom:1px solid var(--line);cursor:pointer;
@@ -317,7 +319,7 @@ body.kbd .nx-body{padding-bottom:var(--kb,0px)}
 .nx-body>label.small:first-child{margin-top:0}
 .chips.wrap{flex-wrap:wrap;overflow:visible;margin:0;padding:0;-webkit-mask-image:none;mask-image:none}
 .nx-step{display:flex;align-items:center;gap:.4rem}
-.nx-step b{flex:1;text-align:center;font-family:var(--num);font-size:var(--fs-t2);font-weight:700;font-variant-numeric:tabular-nums}
+.nx-step b{flex:1;text-align:center;font-family:var(--num);font-size:var(--fs-t2);font-weight:var(--fw-num);font-variant-numeric:tabular-nums}
 .nx-uni{gap:.45rem;margin-top:.85rem}
 button:disabled{opacity:.4;pointer-events:none;box-shadow:none}
 
@@ -385,7 +387,7 @@ transition:transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--e
 .restbar.closing{transform:translateY(120%);opacity:0}
 .restbar b{transition:opacity var(--d-fast) ease}
 .restbar .rb-main{flex:1;min-width:0;cursor:pointer}
-.restbar b{font-family:var(--num);font-size:var(--fs-t1);font-weight:700;line-height:1;
+.restbar b{font-family:var(--num);font-size:var(--fs-t1);font-weight:var(--fw-num);line-height:1;
 font-variant-numeric:tabular-nums;display:block}
 .rb-p{height:.3rem;border-radius:2rem;background:var(--soft);margin-top:.35rem;overflow:hidden}
 .rb-p i{display:block;height:100%;width:100%;background:var(--quad);border-radius:2rem;
@@ -418,12 +420,12 @@ border:1px solid var(--line);box-shadow:var(--sh-lift);-webkit-user-select:none;
 animation:kbin var(--d-fast) var(--ease-out);transition:bottom var(--d-ui) var(--ease-out)}
 @keyframes kbin{from{opacity:0;transform:translateY(8px)}}
 body.kbon .kbbar{display:flex}
-.kb-b{min-width:4.2rem;height:44px;padding:0 .8rem;font-size:var(--fs-body);font-weight:700;font-variant-numeric:tabular-nums;
+.kb-b{min-width:4.2rem;height:44px;padding:0 .8rem;font-size:var(--fs-body);font-weight:600;font-variant-numeric:tabular-nums;
 background:var(--card);border:1px solid var(--line);border-radius:var(--rs);box-shadow:var(--sh)}
 .kb-b.press{background:var(--acc);border-color:var(--acc);color:#fff;transform:scale(.96)}
 .kb-u{padding:0 .3rem;font-size:var(--fs-c2);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
 .kb-t{display:none;margin-left:auto;height:44px;align-items:center;padding:0 .85rem;border-radius:2rem;white-space:nowrap;
-background:var(--soft);font-family:var(--num);font-size:var(--fs-t2);font-weight:700;font-variant-numeric:tabular-nums}
+background:var(--soft);font-family:var(--num);font-size:var(--fs-t2);font-weight:var(--fw-num);font-variant-numeric:tabular-nums}
 .kb-t.over{background:var(--quad);color:var(--bg)}
 body.kbstep .kb-t{display:flex}
 body.kbstep .restbar{display:none}
@@ -433,7 +435,7 @@ body.kbstep .restbar{display:none}
 .chart .ax{fill:var(--mute);font-size:11px;font-weight:600;letter-spacing:.03em}
 .chart .gl{stroke:var(--line);stroke-width:1}
 .ring{width:3.5rem;height:3.5rem;flex:none}
-.ring .rtxt{font-family:var(--num);font-size:21px;font-weight:700;fill:var(--ink);font-variant-numeric:tabular-nums}
+.ring .rtxt{font-family:var(--num);font-size:21px;font-weight:var(--fw-num);fill:var(--ink);font-variant-numeric:tabular-nums}
 
 /* ============ Wochenvolumen ============ */
 .vol{display:flex;align-items:center;gap:.5rem;margin:.35rem 0}
@@ -454,7 +456,7 @@ overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .setrow.pr .chk.just{animation:prglow 900ms var(--ease-out)}
 @keyframes prglow{0%{box-shadow:0 0 0 0 var(--prsoft)}40%{box-shadow:0 0 0 7px var(--prsoft)}100%{box-shadow:0 0 0 0 transparent}}
 .best{margin:.3rem 0 .2rem}
-.best b{display:block;font-family:var(--num);font-size:var(--fs-t1);line-height:1.1;color:var(--pr)}
+.best b{display:block;font-family:var(--num);font-size:var(--fs-t1);font-weight:var(--fw-num);line-height:1.1;color:var(--pr)}
 
 /* ============ Plan: Drag & Drop, Rotation, Supersatz ============ */
 .drag{cursor:grab;touch-action:none;color:var(--mute);display:inline-flex;align-items:center;justify-content:center;
@@ -1290,7 +1292,7 @@ function renderPlan(){
   h+='<details><summary>Anderen Split laden</summary><p class="small mute">Ersetzt den aktuellen Plan komplett. Historie und Übungen bleiben.</p><div class="row"><select id="tplsel" class="grow">'+Object.keys(TEMPLATES).map(function(k){return '<option value="'+k+'">'+esc(TEMPLATES[k].name)+'</option>';}).join('')+'</select><button data-act="loadtpl">Laden</button></div></details></div>';
   S.sessions.forEach(function(s,si){
     var open=!!ui.planOpen[s.id];
-    h+='<div class="card sess'+(open?'':' closed')+'" data-dragitem="1" data-sid="'+s.id+'"><div class="row"><span class="drag" data-drag="sess" title="Ziehen zum Sortieren">'+GRIP+'</span><input data-sname="'+s.id+'" value="'+esc(s.name)+'" style="font-weight:700;font-size:var(--fs-t3)" class="grow"><button class="icon tiny" data-ptog="'+s.id+'" title="Auf- und zuklappen"><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><button class="icon tiny" data-sdup="'+s.id+'" title="Einheit duplizieren"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button><button class="tiny danger" data-sdel="'+s.id+'">✕</button></div>';
+    h+='<div class="card sess'+(open?'':' closed')+'" data-dragitem="1" data-sid="'+s.id+'"><div class="row"><span class="drag" data-drag="sess" title="Ziehen zum Sortieren">'+GRIP+'</span><input data-sname="'+s.id+'" value="'+esc(s.name)+'" style="font-weight:var(--fw-head);font-size:var(--fs-t3)" class="grow"><button class="icon tiny" data-ptog="'+s.id+'" title="Auf- und zuklappen"><svg class="chev" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><button class="icon tiny" data-sdup="'+s.id+'" title="Einheit duplizieren"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button><button class="tiny danger" data-sdel="'+s.id+'">✕</button></div>';
     h+='<div class="ssum small mute">'+s.slots.length+' Übungen'+(s.tag?' · '+esc(s.tag):'')+'</div>';
     h+='<div class="sbody"><input data-stag="'+s.id+'" value="'+esc(s.tag)+'" placeholder="Kurzbeschreibung" class="small" style="margin:.4rem 0">';
     s.slots.forEach(function(sl,i){
