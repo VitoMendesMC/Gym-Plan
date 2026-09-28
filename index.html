@@ -326,13 +326,14 @@ opacity:0;pointer-events:none;transform:translateX(-50%) translateY(10px) scale(
 transition:opacity var(--d-ui) var(--ease-out),transform var(--d-ui) var(--ease-out)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
 
-/* ============ Satzzeilen mit Haken und Steppern ============ */
-.sets td.n{width:2.3rem;padding-right:.2rem}
-.sets td.w{width:6.4rem}
-.sets td.r{width:5.6rem}
-.sets td.rir{width:2.9rem}
-.sets td.nt{width:1.9rem}
-.chk{width:2rem;height:2.15rem;padding:0;display:flex;align-items:center;justify-content:center;
+/* ============ Satzzeilen mit Haken ============ */
+/* Feste Spalten: Haken und Notiz 44 px (px statt rem, damit größere Schrift die Zeile nicht sprengt), 4 px Luft.
+   kg, Wdh und RIR teilen sich den Rest. Die Breiten kommen aus der Kopfzeile (table-layout:fixed). */
+.sets{table-layout:fixed}
+.sets th.n,.sets td.n,.sets th.nt,.sets td.nt{width:48px;padding:0}
+.sets th.w{width:29%}
+.sets th.r{width:23%}
+.chk{width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;
 font-weight:700;font-size:.9rem;color:var(--mute);background:var(--bg);border:1px solid var(--line);border-radius:var(--rs)}
 .chk{transition:background var(--d-fast) ease,border-color var(--d-fast) ease,color var(--d-fast) ease,transform var(--d-fast) var(--ease-out)}
 .chk:active{transform:scale(.9);transition-duration:var(--d-press)}
@@ -340,13 +341,10 @@ font-weight:700;font-size:.9rem;color:var(--mute);background:var(--bg);border:1p
 .setrow.done .chk.just{animation:chkpop 220ms var(--ease-out)}
 @keyframes chkpop{0%{transform:scale(.88)}55%{transform:scale(1.1)}100%{transform:scale(1)}}
 .sets input{transition:background var(--d-ui) ease,border-color var(--d-ui) ease,box-shadow .15s ease}
+/* Vorwerte vom letzten Mal: lesbar grau und dünn, eingetragene Werte bleiben kräftig */
+.sets input::placeholder{color:var(--mute);font-weight:400;opacity:1}
 .setrow td.n{transition:color var(--d-fast) ease}
-.stp{display:flex;align-items:stretch;gap:2px}
-.stp input{flex:1;min-width:0;padding:.5rem .1rem}
-.sb{flex:none;width:1.5rem;padding:0;font-size:1.05rem;font-weight:600;color:var(--mute);
-background:transparent;border-color:transparent;border-radius:calc(var(--rs) - .2rem);display:flex;align-items:center;justify-content:center}
-.sb:active{background:var(--acc);color:#fff}
-.nb{width:1.9rem;height:2.15rem;padding:0;color:var(--mute);background:transparent;border-color:transparent;
+.nb{width:44px;height:44px;margin-left:auto;padding:0;color:var(--mute);background:transparent;border-color:transparent;
 display:flex;align-items:center;justify-content:center}
 .nb svg{width:15px;height:15px}
 .nb.has{color:var(--acc)}
@@ -404,6 +402,29 @@ body.resting main{padding-bottom:11rem}
 /* Tastatur offen: Leiste sitzt direkt über der Tastatur statt dahinter (Wert kommt aus visualViewport) */
 body.kbd .restbar{bottom:calc(var(--kb,0px) + .5rem);transition:bottom var(--d-ui) var(--ease-out),transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--ease-out)}
 body.resting .toast{bottom:8.6rem}
+/* Tastatur offen: Meldungen über Tastatur und Leiste statt dahinter */
+body.kbd .toast{bottom:calc(var(--kb,0px) + .75rem)}
+body.kbd.kbon .toast,body.kbd.resting .toast{bottom:calc(var(--kb,0px) + 4.4rem)}
+
+/* ============ Stepper-Leiste über der Tastatur ============ */
+/* Nur bei offener Tastatur und Fokus in kg oder Wdh (body.kbon). Läuft eine Pause,
+   steht die Zeit rechts in der Leiste (body.kbstep) und die große Pausenleiste ist so lange ausgeblendet. */
+.kbbar{display:none;position:fixed;left:.6rem;right:.6rem;bottom:calc(var(--kb,0px) + .5rem);z-index:16;
+max-width:43rem;margin:0 auto;align-items:center;gap:6px;padding:6px;border-radius:var(--rm);
+background:var(--glass);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);
+border:1px solid var(--line);box-shadow:var(--sh-lift);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+animation:kbin var(--d-fast) var(--ease-out);transition:bottom var(--d-ui) var(--ease-out)}
+@keyframes kbin{from{opacity:0;transform:translateY(8px)}}
+body.kbon .kbbar{display:flex}
+.kb-b{min-width:4.2rem;height:44px;padding:0 .8rem;font-size:1.05rem;font-weight:700;font-variant-numeric:tabular-nums;
+background:var(--card);border:1px solid var(--line);border-radius:var(--rs);box-shadow:var(--sh)}
+.kb-b.press{background:var(--acc);border-color:var(--acc);color:#fff;transform:scale(.96)}
+.kb-u{padding:0 .3rem;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
+.kb-t{display:none;margin-left:auto;height:44px;align-items:center;padding:0 .85rem;border-radius:2rem;white-space:nowrap;
+background:var(--soft);font-family:var(--display);font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums}
+.kb-t.over{background:var(--quad);color:var(--bg)}
+body.kbstep .kb-t{display:flex}
+body.kbstep .restbar{display:none}
 
 /* ============ Diagramme ============ */
 .chart{width:100%;height:auto;display:block;margin:.4rem 0 .2rem;overflow:visible}
@@ -492,6 +513,7 @@ nav.tabs{view-transition-name:tabs}
 <nav class="tabs" id="tabs"></nav>
 <div class="toast" id="toast"></div>
 <div id="rest"></div>
+<div id="kbbar" class="kbbar"><button type="button" class="kb-b" tabindex="-1"></button><button type="button" class="kb-b" tabindex="-1"></button><span class="kb-u" id="kb_u"></span><span class="kb-t" id="kbtime"></span></div>
 <div id="sbar" aria-hidden="true"></div>
 <script>
 (function(){
@@ -855,7 +877,8 @@ function stepVal(w,key){
   cur=f==='w'?Math.round(cur*4)/4:Math.round(cur);
   if(cur<0)cur=0;
   st[f]=String(cur);
-  /* Knöpfe verstellen nur Werte, abgehakt wird per Haken */
+  /* Schritte zählen wie Tippen (E-1): nie sofort abhaken, ausgewertet wird erst beim Verlassen der Zeile */
+  _dirty[ei+'.'+si]={w:w,e:e,st:st};
   syncRow(w,ei,si);refreshPR(w,ei,si);saveLazy();}
 function toggleNoteRow(key){
   var tr=document.querySelector('tr[data-nr="'+key+'"]');if(!tr)return;
@@ -897,25 +920,74 @@ function drawRest(){
   if(rest.end&&!rest.paused&&restLeft()<=0){rest.over=rest.end;rest.end=0;persistRest();if(!S||S.sound!==false)alarm();}
   var on=!!(rest.end||rest.paused),over=!on&&rest.over&&(Date.now()-rest.over<REST_CAP);
   var mode=on?'on':(over?'over':'off');
-  if(mode==='off'){if(rest.mode){closeRestbar();}else{clearInterval(rest.t);rest.t=null;document.body.classList.remove('resting');}return;}
+  if(mode==='off'){if(rest.mode){closeRestbar();}else{clearInterval(rest.t);rest.t=null;document.body.classList.remove('resting');}kbSyncBar();return;}
   document.body.classList.add('resting');
   if(rest.mode!==mode){rest.mode=mode;
     host.innerHTML=mode==='on'
       ?'<div class="restbar"><button class="rb-b" data-rest="m30">−30</button><div class="rb-main" data-rest="pause"><b id="rtime">0:00</b><div class="rb-p"><i id="rfill"></i></div></div><button class="rb-b" data-rest="p30">+30</button><button class="rb-b rb-x" data-rest="skip">✕</button></div>'
       :'<div class="restbar over" data-rest="skip"><div class="rb-main"><b id="rover">+0:00</b><span class="rb-hint">Pause vorbei</span></div><span class="rb-x">✕</span></div>';}
+  /* Zeitkapsel in der Stepper-Leiste bekommt dieselbe Zeit */
+  var kE=document.getElementById('kbtime'),txt;
   if(mode==='on'){var l=restLeft(),tE=document.getElementById('rtime'),fE=document.getElementById('rfill');
-    if(tE)tE.textContent=(rest.paused?'❚❚ ':'')+fmtT(l);
+    txt=(rest.paused?'❚❚ ':'')+fmtT(l);if(tE)tE.textContent=txt;
     if(fE)fE.style.transform='scaleX('+(rest.dur?Math.max(0,Math.min(1,l/rest.dur)):0).toFixed(3)+')';}
-  else{var oE=document.getElementById('rover');if(oE)oE.textContent='+'+fmtT(Math.max(0,Math.floor((Date.now()-rest.over)/1000)));}}
+  else{var oE=document.getElementById('rover');txt='+'+fmtT(Math.max(0,Math.floor((Date.now()-rest.over)/1000)));if(oE)oE.textContent=txt;}
+  if(kE){kE.textContent=txt;kE.classList.toggle('over',mode==='over');}
+  kbSyncBar();}
 
 /* Tastatur erkennen: sichtbarer Bereich (visualViewport) kleiner als das Layout = verdeckter Teil unten */
 function kbSync(){
   var vv=window.visualViewport;if(!vv)return;
   var lh=document.documentElement.clientHeight,kb=Math.round(lh-vv.height-vv.offsetTop),open=kb>80;
   document.body.style.setProperty('--kb',(open?kb:0)+'px');
-  document.body.classList.toggle('kbd',open);}
+  document.body.classList.toggle('kbd',open);kbSyncBar();}
 if(window.visualViewport){var _kbRaf=0;var kbQ=function(){cancelAnimationFrame(_kbRaf);_kbRaf=requestAnimationFrame(kbSync);};
   window.visualViewport.addEventListener('resize',kbQ);window.visualViewport.addEventListener('scroll',kbQ);}
+
+/* ---------- Stepper-Leiste über der Tastatur (#kbbar) ---------- */
+/* Sichtbar nur bei offener Tastatur und Fokus in kg oder Wdh, im laufenden Training und beim Bearbeiten im Kalender.
+   Die Knöpfe tragen data-stp mit dem Zeilenschlüssel, damit rowKey() sie zur Zeile zählt. */
+var kbKey=null,_kbRv=0;
+function kbTrack(){
+  var bar=document.getElementById('kbbar'),ae=document.activeElement;
+  if(!bar||bar.contains(ae))return;
+  var a=ae&&ae.dataset&&ae.dataset.set?ae.dataset.set.split('.'):null;
+  var k=(a&&(a[2]==='w'||a[2]==='r')&&wctx())?a[0]+'|'+a[1]+'|'+a[2]:null;
+  if(k!==kbKey){kbKey=k;
+    if(k){var kg=a[2]==='w',s=kg?'2.5':'1',lb=kg?'2,5':'1',b=bar.querySelectorAll('.kb-b');
+      b[0].setAttribute('data-stp',k+'|-'+s);b[0].textContent='−'+lb;
+      b[1].setAttribute('data-stp',k+'|'+s);b[1].textContent='+'+lb;
+      document.getElementById('kb_u').textContent=kg?'kg':'Wdh';
+      if(document.body.classList.contains('kbon'))kbRevealSoon();}}
+  kbSyncBar();}
+function kbSyncBar(){
+  var b=document.body,on=!!kbKey&&b.classList.contains('kbd'),was=b.classList.contains('kbon');
+  b.classList.toggle('kbon',on);
+  b.classList.toggle('kbstep',on&&b.classList.contains('resting'));
+  if(on&&!was)kbRevealSoon();}
+/* Liegt das Feld hinter der Leiste, ein Stück hochscrollen (erst wenn iOS mit dem eigenen Scrollen fertig ist) */
+function kbRevealSoon(){clearTimeout(_kbRv);_kbRv=setTimeout(kbReveal,350);}
+function kbReveal(){
+  if(!kbKey||!document.body.classList.contains('kbon'))return;
+  var a=kbKey.split('|'),i=document.querySelector('input[data-set="'+a[0]+'.'+a[1]+'.'+a[2]+'"]');
+  if(!i||document.activeElement!==i)return;
+  var d=i.getBoundingClientRect().bottom-(document.getElementById('kbbar').getBoundingClientRect().top-8);
+  if(d>0)window.scrollBy(0,d);}
+document.addEventListener('focusin',kbTrack);
+document.addEventListener('focusout',function(){setTimeout(kbTrack,0);});
+/* Eigener Listener statt click-Router: Auslösen auf pointerdown mit preventDefault, damit Feld und Tastatur den Fokus behalten.
+   touchstart (nicht passiv) verhindert auf dem iPhone den Fokuswechsel und den nachgeschobenen Klick. */
+(function(){var bar=document.getElementById('kbbar');if(!bar)return;
+  bar.addEventListener('touchstart',function(ev){ev.preventDefault();},{passive:false});
+  bar.addEventListener('mousedown',function(ev){ev.preventDefault();});
+  bar.addEventListener('pointerdown',function(ev){ev.preventDefault();
+    var b=ev.target.closest('.kb-b'),w=wctx();if(!b||!w||!b.dataset.stp)return;
+    b.classList.add('press');setTimeout(function(){b.classList.remove('press');},140);
+    stepVal(w,b.dataset.stp);
+    /* Rückfall, falls iOS den Fokus doch verschiebt: zurück ins Feld */
+    var p=b.dataset.stp.split('|'),i=document.querySelector('input[data-set="'+p[0]+'.'+p[1]+'.'+p[2]+'"]');
+    if(i&&document.activeElement!==i){try{i.focus({preventScroll:true});}catch(e){i.focus();}}});
+})();
 
 /* ---------- Ton, Vibration, Bildschirm ---------- */
 var AC=null;
@@ -1117,6 +1189,7 @@ function renderNow(){
   var t=[['home','Heute'],['plan','Plan'],['cal','Kalender'],['ex','Übungen'],['more','Mehr']];
   updateWake();
   document.getElementById('tabs').innerHTML=t.map(function(x){return '<button data-tab="'+x[0]+'" class="'+(view===x[0]?'on':'')+'">'+ico(x[0])+'<span>'+x[1]+'</span></button>';}).join('');
+  kbTrack();   /* Neuaufbau kann das fokussierte Feld entfernen: Leiste neu bewerten */
 }
 function renderHome(){
   var w=weekInfo();var next=S.sessions[S.nextIdx%S.sessions.length];
@@ -1185,14 +1258,14 @@ function renderWorkout(a,isActive){
     h+='<p class="last">'+(perf?'Letztes Mal ('+fmtDate(perf.date)+'): '+esc(fmtSets(perf.sets)):'Noch keine Daten für diese Variante.')+'</p>';
     if(perf&&perf.note)h+='<div class="notebox">Notiz letztes Mal: '+esc(perf.note)+'</div>';
     if(hint)h+='<p class="hint">'+esc(hint)+'</p>';
-    h+='<table class="sets"><thead><tr><th></th><th>kg</th><th>Wdh</th><th>RIR</th><th></th></tr></thead><tbody>';
+    h+='<table class="sets"><thead><tr><th class="n"></th><th class="w">kg</th><th class="r">Wdh</th><th class="rir">RIR</th><th class="nt"></th></tr></thead><tbody>';
     e.sets.forEach(function(st,si){
       var ph=perf&&perf.sets[si]?perf.sets[si]:null;var dn=isDone(st);
       var isPR=dn&&prBase>0&&e1(st)>prBase*1.001;
       h+='<tr class="setrow'+(dn?' done':'')+(isPR?' pr':'')+'">';
       h+='<td class="n"><button class="chk" data-done="'+ei+'.'+si+'" title="Satz erledigt">'+(dn?'\u2713':(si+1))+'</button></td>';
-      h+='<td class="w"><div class="stp"><button class="sb" data-stp="'+ei+'|'+si+'|w|-2.5">−</button><input type="number" step="0.5" inputmode="decimal" data-set="'+ei+'.'+si+'.w" value="'+esc(st.w)+'" placeholder="'+(ph?esc(ph.w):'')+'"><button class="sb" data-stp="'+ei+'|'+si+'|w|2.5">+</button></div></td>';
-      h+='<td class="r"><div class="stp"><button class="sb" data-stp="'+ei+'|'+si+'|r|-1">−</button><input type="number" inputmode="numeric" data-set="'+ei+'.'+si+'.r" value="'+esc(st.r)+'" placeholder="'+(ph?esc(ph.r):'')+'"><button class="sb" data-stp="'+ei+'|'+si+'|r|1">+</button></div></td>';
+      h+='<td class="w"><input type="number" step="0.5" inputmode="decimal" data-set="'+ei+'.'+si+'.w" value="'+esc(st.w)+'" placeholder="'+(ph?esc(ph.w):'')+'"></td>';
+      h+='<td class="r"><input type="number" inputmode="numeric" data-set="'+ei+'.'+si+'.r" value="'+esc(st.r)+'" placeholder="'+(ph?esc(ph.r):'')+'"></td>';
       h+='<td class="rir"><input type="number" inputmode="numeric" data-set="'+ei+'.'+si+'.rir" value="'+esc(st.rir)+'" placeholder="'+(ph&&ph.rir!==''?esc(ph.rir):'')+'"></td>';
       h+='<td class="nt"><button class="nb'+(st.note?' has':'')+'" data-noteopen="'+ei+'.'+si+'" title="Notiz zum Satz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4.2L19 9.2a2.1 2.1 0 0 0-3-3L5.2 17z"/></svg></button></td></tr>';
       h+='<tr class="noterow'+(st.note?' on':'')+'" data-nr="'+ei+'.'+si+'"><td></td><td colspan="4"><input type="text" data-set="'+ei+'.'+si+'.note" value="'+esc(st.note)+'" placeholder="Notiz zum Satz"></td></tr>';
@@ -1403,7 +1476,7 @@ function deleteWorkout(id){
   toastUndo('Einheit gelöscht',function(){S.workouts.splice(Math.min(idx,S.workouts.length),0,w);});}
 
 document.addEventListener('click',function(ev){
-  var el=ev.target.closest('[data-tab],[data-start],[data-act],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-del],[data-panker],[data-puni],[data-addslot],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-stp],[data-noteopen],[data-fold],[data-undo],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
+  var el=ev.target.closest('[data-tab],[data-start],[data-act],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-del],[data-panker],[data-puni],[data-addslot],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-noteopen],[data-fold],[data-undo],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
   if(!el)return;var d=el.dataset,parts;
   if(d.undo){var uf=undoFn;undoFn=null;document.getElementById('toast').classList.remove('show');
     if(uf){uf();save();render();toast('Wiederhergestellt');}return;}
@@ -1443,7 +1516,6 @@ document.addEventListener('click',function(ev){
   var wq=wctx();
   if(wq){
     if(d.done!==undefined){toggleDone(wq,d.done);return;}
-    if(d.stp!==undefined){stepVal(wq,d.stp);return;}
     if(d.noteopen!==undefined){toggleNoteRow(d.noteopen);return;}
     if(d.fold!==undefined){var fc=document.querySelectorAll('.card.entry')[+d.fold];
       foldCard(wq,+d.fold,!(fc&&fc.classList.contains('folded')));return;}
