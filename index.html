@@ -26,7 +26,7 @@
 /* Schriftstärken (F10, Nutzerwunsch „schlanker"): große Zahlen und Überschriften. Kleine Etiketten bleiben kräftig, sonst leidet die Lesbarkeit. */
 --fw-num:400;--fw-head:600;
 --bg:#F2F3EE;--ink:#151A1F;--mute:#5E6870;--line:#E0E3DC;--soft:#EAEDE6;--card:#FFFFFF;
---sheet:#F2F3EE;--cardline:transparent;
+--sheet:#F2F3EE;--cardline:transparent;--seg:#FFFFFF;
 --glass:rgba(242,243,238,.82);
 --quad:#12694A;--quadsoft:#DCEFE4;--acc:#AC5E16;--accsoft:#F8E6CE;--danger:#A63527;
 --pr:#8F6508;--prsoft:#F7EBCD;
@@ -45,7 +45,7 @@
 }
 @media (prefers-color-scheme:dark){:root{
 --bg:#101418;--ink:#E7ECEA;--mute:#8F9AA2;--line:#282F35;--soft:#1B2126;--card:#181D22;
---sheet:#1E242A;--cardline:var(--line);
+--sheet:#1E242A;--cardline:var(--line);--seg:#2A3238;
 --glass:rgba(16,20,24,.82);
 --quad:#4FC094;--quadsoft:#16332B;--acc:#E4A251;--accsoft:#3A2A16;--danger:#E07A6E;
 --pr:#E3B547;--prsoft:#3D330F;
@@ -297,7 +297,13 @@ transition:transform var(--d-fast) var(--ease-out)}
 @keyframes sheetin{from{transform:translateY(100%)}}
 .overlay.closing .sheet{transform:translateY(100%)}
 .sheet::before{content:"";width:2.5rem;height:.25rem;border-radius:2rem;background:var(--line);margin:.15rem auto .6rem}
-.sheet>.row b{font-family:var(--display);font-size:var(--fs-t2);font-weight:var(--fw-head)}
+.sheet>.pk-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.5rem}
+.sheet>.pk-head button{justify-self:start}
+.sheet>.pk-head b{text-align:center;font-size:var(--fs-body);font-weight:600}
+/* Sheets per Wischen nach unten schließen (V6, Stufe 1): Griff und Kopf ziehen, Listen scrollen normal */
+.sheet{touch-action:none}
+.sheet .pk-list,.sheet .nx-body{touch-action:pan-y}
+.sheet .chips{touch-action:pan-x}
 .sheet .pk-list{overflow-y:auto;flex:1;margin-top:.5rem;-webkit-overflow-scrolling:touch}
 @keyframes fade{from{opacity:0}}
 .pk-item{padding:.6rem .3rem;border-bottom:1px solid var(--line);cursor:pointer;
@@ -484,6 +490,20 @@ body.dragging{-webkit-user-select:none;user-select:none;overscroll-behavior:none
 .rot button:active{transform:none;background:var(--soft)}
 .rots button.tiny{border-radius:2rem}
 
+/* ============ Segment-Umschalter, Häkchen-Chips (V10) ============ */
+.segc{display:inline-flex;gap:2px;padding:2px;border-radius:calc(var(--rs) + 2px);background:var(--soft)}
+.segc button{min-height:34px;padding:0 .75rem;border:0;border-radius:var(--rs);background:transparent;box-shadow:none;
+color:var(--mute);font-size:var(--fs-fn);font-weight:600}
+.segc button.on{background:var(--seg);color:var(--ink);box-shadow:var(--sh)}
+.chip{min-height:34px;padding:0 .8rem;border-radius:2rem;background:var(--card);border:1px solid var(--line);
+color:var(--mute);font-size:var(--fs-fn);font-weight:600}
+.chip.on{background:var(--accsoft);border-color:var(--acc);color:var(--acc)}
+
+/* ============ Zurück im iOS-Stil (Übungsdetail, V7) ============ */
+.navback{display:inline-flex;align-items:center;min-height:44px;margin:-.4rem 0 -.5rem -.15rem;padding:0 .15rem;
+background:none;border:0;box-shadow:none;color:var(--acc);font-size:var(--fs-body);font-weight:400}
+.navback:active{opacity:.5;transform:none}
+
 /* ============ Gruppierte Liste (Einstellungen) ============ */
 .group{background:var(--card);border:1px solid var(--cardline);border-radius:var(--rm);box-shadow:var(--sh);margin:.65rem 0;overflow:hidden}
 .group>.card{margin:0;border:none;border-radius:0;box-shadow:none;border-bottom:1px solid var(--line)}
@@ -638,7 +658,7 @@ function applyTheme(){var dark=!!(_mqDark&&_mqDark.matches);
   var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#101418':'#F2F3EE');}
 if(_mqDark){if(_mqDark.addEventListener)_mqDark.addEventListener('change',applyTheme);else if(_mqDark.addListener)_mqDark.addListener(applyTheme);}
 try{localStorage.removeItem('trainingsapp.theme');}catch(e){}   /* alter Schlüssel des entfernten Schalters */
-function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1800);}
+function toast(m){undoFn=null;var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1800);}
 function closeOverlay(cb){
   var ov=document.querySelector('.overlay');
   if(!ov){cb();return;}
@@ -713,13 +733,17 @@ function weekInfo(){
 function exList(){return Object.keys(S.exercises).map(function(k){return S.exercises[k];}).sort(function(a,b){return a.name.localeCompare(b.name,'de');});}
 function matchEquip(e,f){if(!f)return true;if(f==='frei')return e.equip==='Langhantel'||e.equip==='Kurzhantel';return e.equip===f;}
 function chips(list,cur,attr){return '<div class="chips">'+list.map(function(c){var v=typeof c==='string'?c:c[0],l=typeof c==='string'?c:c[1];return '<button data-'+attr+'="'+esc(v)+'" class="'+(v===cur?'on':'')+'">'+esc(l)+'</button>';}).join('')+'</div>';}
+/* Segment beidseitig / je Seite (V10): zeigt den Zustand, ein Tipp setzt den Wert statt umzuschalten */
+function uniSeg(attr,key,on){return '<span class="segc">'+[['0','beidseitig'],['1','je Seite']].map(function(o){return '<button data-'+attr+'="'+key+'" data-val="'+o[0]+'" class="'+((o[0]==='1')===!!on?'on':'')+'">'+o[1]+'</button>';}).join('')+'</span>';}
+/* Häkchen-Chip für An/Aus-Eigenschaften (Anker, Supersatz) */
+function tickChip(attr,key,on,label){return '<button class="chip'+(on?' on':'')+'" data-'+attr+'="'+key+'">'+(on?'✓ ':'')+label+'</button>';}
 function muscleChips(cur,attr){return chips([['','Alle']].concat(MUSCLES.map(function(m){return [m,m];})),cur,attr);}
 
 /* ---------- Picker ---------- */
 function openPicker(ctx,muscle){ui.picker={ctx:ctx,q:'',muscle:muscle||'',equip:''};render();setTimeout(function(){var q=document.getElementById('pk_q');if(q)q.focus();},50);}
 function renderPicker(){
   var p=ui.picker;
-  var h='<div class="overlay" data-pkclose="1"><div class="sheet" data-stop="1"><div class="row"><b class="grow">Übung wählen</b><button class="tiny" data-pkclose="1">Schließen</button></div>';
+  var h='<div class="overlay" data-pkclose="1"><div class="sheet" data-stop="1"><div class="pk-head"><button class="tiny" data-pkclose="1">Abbrechen</button><b>Übung wählen</b><span></span></div>';
   h+='<input id="pk_q" placeholder="Suchen…" value="'+esc(p.q)+'" style="margin-top:.5rem">';
   h+='<div id="pk_filters">'+muscleChips(p.muscle,'pkm')+chips(EQUIP_FILTERS,p.equip,'pke')+'</div>';
   h+='<div class="pk-list" id="pk_list">'+pickerListHTML()+'</div></div></div>';
@@ -779,7 +803,7 @@ function nxSave(){
   S.exercises[id]={id:id,name:n.name.trim(),muscle:n.muscle,equip:n.equip,uniOk:!!n.uni,reps:[n.reps[0],n.reps[1]],goal:n.goal.trim(),cue:n.cue.trim(),custom:true,note:''};save();
   var fromPicker=!!ui.picker;
   closeOverlay(function(){ui.newEx=null;
-    if(fromPicker){applyPick(id);}else{ui.exDetail=id;render();window.scrollTo(0,0);}
+    if(fromPicker){applyPick(id);}else{exOpen(id);}
     toast('Übung angelegt');});}
 function nxCancel(){
   if(ui.picker){ui.newEx=null;render();return;}   /* zurück zur Übungsauswahl */
@@ -1096,7 +1120,13 @@ function ringSVG(n,tot){
 var undoFn=null;
 function toastUndo(msg,fn){undoFn=fn;var t=document.getElementById('toast');
   t.innerHTML=esc(msg)+'<button data-undo="1">Rückgängig</button>';t.classList.add('show');
-  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');undoFn=null;},6000);}
+  clearTimeout(t._t);}
+/* Die Rückgängig-Meldung bleibt stehen bis zum nächsten Tipp außerhalb (V3). Capture-Phase: läuft vor allen anderen Klicks.
+   Scrollen löst keinen Klick aus und lässt sie stehen. */
+document.addEventListener('click',function(ev){
+  if(!undoFn)return;var t=document.getElementById('toast');
+  if(t.contains(ev.target))return;
+  undoFn=null;t.classList.remove('show');},true);
 
 /* ---------- Backup-Erinnerung ---------- */
 function backupNote(){
@@ -1235,7 +1265,10 @@ function renderWorkout(a,isActive){
   var h='<div class="sticky"><div class="row"><div class="grow"><b>'+esc(a.sessionName||(s?s.name:'Einheit'))+'</b> <span class="small mute">'+(isActive?'läuft':'Bearbeiten')+'</span></div>';
   if(isActive)h+='<button class="acc tiny'+(a.kurz?' on':'')+'" data-act="kurz">Kurzversion'+(a.kurz?' an':'')+'</button>';
   else h+='<button class="tiny primary" data-act="editdone">Fertig</button>';
-  h+='</div><div class="row" style="margin-top:.4rem"><input type="date" data-wdate="1" value="'+esc(a.date)+'" style="width:auto"><input data-wname="1" value="'+esc(a.sessionName||'')+'" class="grow" placeholder="Name der Einheit"></div>';
+  h+='</div>';
+  /* Datum und Name: beim Bearbeiten oben, im laufenden Training unten in der Karte „Einheit" (V2, schlankerer Kopf) */
+  var dn=function(mt){return '<div class="row" style="margin-top:'+mt+'"><input type="date" data-wdate="1" value="'+esc(a.date)+'" style="width:auto"><input data-wname="1" value="'+esc(a.sessionName||'')+'" class="grow" placeholder="Name der Einheit"></div>';};
+  if(!isActive)h+=dn('.4rem');
   var pg=progOf(a);
   h+='<div class="wprog"><div class="wpbar"><i id="wpfill" style="transform:scaleX('+(pg.t?(pg.d/pg.t).toFixed(3):0)+')"></i></div><span id="wptext">Satz '+pg.d+' von '+pg.t+'</span></div>';
   h+='</div>';
@@ -1248,7 +1281,7 @@ function renderWorkout(a,isActive){
     h+='<div class="card entry'+(sl&&sl.anker?' anker':'')+(isActive&&allDone?' folded':'')+(role==='a'?' ssA':role==='b'?' ssB':'')+'" data-m="'+esc(x.muscle)+'" data-sum="'+esc(fmtSets(e.sets.filter(filled))||'erledigt')+'">';
     h+='<div class="row click" data-fold="'+ei+'"><div class="grow"><span class="exname">'+esc(x.name)+'</span> '+(sl&&sl.anker?'<span class="pill a">Anker</span>':'')+' '+mpill(x.muscle)+' <span class="pill">'+esc(x.equip)+'</span>'+(hasPR?' <span class="pill pr">PR</span>':'')+(role?' <span class="pill ss">Supersatz '+(role==='a'?'1/2':'2/2')+'</span>':'')+'</div><button class="tiny danger" data-edel="'+ei+'" title="Übung aus dieser Einheit entfernen">✕</button></div>';
     h+='<div class="ebody"><div>';
-    h+='<div class="row" style="margin-top:.35rem"><button class="tiny" data-swap="'+ei+'">Übung tauschen</button><button class="tiny'+(e.uni?' acc on':'')+'" data-uni="'+ei+'">'+(e.uni?'je Seite':'beidseitig')+'</button>';
+    h+='<div class="row" style="margin-top:.35rem"><button class="tiny" data-swap="'+ei+'">Übung tauschen</button>'+uniSeg('uni',ei,e.uni);
     if(sl&&!planned)h+='<button class="tiny acc" data-persist="'+ei+'">Dauerhaft im Plan</button>';
     h+='</div>';
     h+='<div class="cue"><b>Ziel:</b> '+e.setsTarget+' × '+e.repMin+'–'+e.repMax+(e.uni?' je Seite':'')+(x.goal?' · '+esc(x.goal):'')+'</div>';
@@ -1277,12 +1310,14 @@ function renderWorkout(a,isActive){
     h+='</div><textarea data-enote="'+ei+'" placeholder="Notiz zur Übung heute (Gefühl, Gerät, Technik…)">'+esc(e.note)+'</textarea></div></div></div>';
   });
   h+='<div class="row"><button data-act="addentry" class="grow">+ Übung hinzufügen</button></div>';
-  h+='<div class="card"><label class="small">Notiz zur Einheit</label><textarea data-wnote="1" placeholder="Schlaf, Energie, Gym voll, was auch immer relevant ist">'+esc(a.note)+'</textarea></div>';
+  if(isActive)h+='<div class="card"><label class="small">Einheit</label>'+dn('0')+'<label class="small" style="margin-top:.75rem">Notiz</label><textarea data-wnote="1" placeholder="Schlaf, Energie, Gym voll, was auch immer relevant ist">'+esc(a.note)+'</textarea></div>';
+  else h+='<div class="card"><label class="small">Notiz zur Einheit</label><textarea data-wnote="1" placeholder="Schlaf, Energie, Gym voll, was auch immer relevant ist">'+esc(a.note)+'</textarea></div>';
   if(isActive){
-    if(ui.finish){h+='<div class="card"><b>Einheit beenden?</b><p class="small mute">Speichern übernimmt alles, was eingetragen ist, auch wenn Übungen offen sind. Leere Sätze werden ignoriert.</p><div class="row"><button class="primary grow" data-act="finishsave">Speichern</button><button class="danger" data-act="finishdiscard">Verwerfen</button><button data-act="finishback">Weiter</button></div></div>';}
+    if(ui.finish){h+='<div class="card"><b>Einheit beenden?</b><p class="small mute">Speichern übernimmt alles, was eingetragen ist, auch wenn Übungen offen sind. Leere Sätze werden ignoriert.</p><div class="row"><button class="primary grow" data-act="finishsave">Speichern</button><button class="danger" data-act="finishdiscard">Verwerfen</button><button data-act="finishback">Weitertrainieren</button></div></div>';}
     else h+='<div class="row" style="margin-top:1rem"><button class="primary grow" data-act="finish">Einheit beenden</button></div>';
   }else{
-    h+='<div class="row" style="margin-top:1rem"><button class="primary grow" data-act="editdone">Fertig</button><button class="danger" data-act="wdel" data-id="'+a.id+'">Einheit löschen</button></div>';
+    h+='<div class="row" style="margin-top:1rem"><button class="primary grow" data-act="editdone">Fertig</button></div>';
+    h+='<div class="row" style="margin-top:1.6rem"><button class="danger grow" data-act="wdel" data-id="'+a.id+'">Einheit löschen</button></div>';
   }
   return h;
 }
@@ -1300,8 +1335,8 @@ function renderPlan(){
       h+='<div class="slot'+(sl.ss&&i<s.slots.length-1?' ss':'')+'" data-dragitem="1" data-slid="'+sl.id+'" data-m="'+esc(x.muscle)+'"><div class="row"><span class="drag" data-drag="slot:'+s.id+'" title="Ziehen zum Sortieren">'+GRIP+'</span>'+mpill(x.muscle)+'<span class="pill">'+esc(x.equip)+'</span><span class="grow"></span><button class="tiny danger" data-del="'+s.id+'.'+i+'">✕</button></div>';
       h+='<button class="exbtn" data-pickplan="'+s.id+'.'+i+'" style="margin:.35rem 0"><span class="n">'+esc(x.name)+'</span><span class="mute small">tauschen ›</span></button>';
       if(x.goal)h+='<p class="small mute" style="margin:0 0 .3rem">'+esc(x.goal)+'</p>';
-      h+='<div class="grid3"><div><label class="small">Sätze</label><input type="number" data-pf="'+s.id+'.'+i+'.sets" value="'+sl.sets+'"></div><div><label class="small">Wdh von</label><input type="number" data-pf="'+s.id+'.'+i+'.repMin" value="'+sl.repMin+'"></div><div><label class="small">Wdh bis</label><input type="number" data-pf="'+s.id+'.'+i+'.repMax" value="'+sl.repMax+'"></div></div>';
-      h+='<div class="row" style="margin-top:.4rem"><button class="tiny'+(sl.anker?' acc on':'')+'" data-panker="'+s.id+'.'+i+'">'+(sl.anker?'Anker (Kurzversion)':'kein Anker')+'</button>'+(x.uniOk?'<button class="tiny'+(sl.uni?' acc on':'')+'" data-puni="'+s.id+'.'+i+'">'+(sl.uni?'je Seite':'beidseitig')+'</button>':'')+(i<s.slots.length-1?'<button class="tiny'+(sl.ss?' acc on':'')+'" data-pss="'+s.id+'.'+i+'">'+(sl.ss?'Supersatz mit nächster':'Supersatz')+'</button>':'')+'</div>';
+      h+='<div class="grid3"><div><label class="small">Sätze</label><input type="number" inputmode="numeric" data-pf="'+s.id+'.'+i+'.sets" value="'+sl.sets+'"></div><div><label class="small">Wdh von</label><input type="number" inputmode="numeric" data-pf="'+s.id+'.'+i+'.repMin" value="'+sl.repMin+'"></div><div><label class="small">Wdh bis</label><input type="number" inputmode="numeric" data-pf="'+s.id+'.'+i+'.repMax" value="'+sl.repMax+'"></div></div>';
+      h+='<div class="row" style="margin-top:.4rem">'+tickChip('panker',s.id+'.'+i,sl.anker,'Anker')+(x.uniOk?uniSeg('puni',s.id+'.'+i,sl.uni):'')+(i<s.slots.length-1?tickChip('pss',s.id+'.'+i,sl.ss,'Supersatz'):'')+'</div>';
       h+='<div class="rots"><span class="lbl">Rotation</span>'+(sl.alt||[]).map(function(aid){var ax=ex(aid);return '<span class="rot"><button data-rot="'+s.id+'.'+i+'.'+esc(aid)+'" title="Jetzt in den Plan tauschen">'+esc(ax.name)+' ⇄</button><button data-rotdel="'+s.id+'.'+i+'.'+esc(aid)+'" title="Aus der Rotation entfernen">×</button></span>';}).join('')+'<button class="tiny" data-addalt="'+s.id+'.'+i+'">+ Alternative</button></div>';
       h+='<textarea data-pnote="'+s.id+'.'+i+'" placeholder="Plan-Hinweis nur für diese Einheit (Rotation, Reihenfolge…)" style="margin-top:.4rem">'+esc(sl.note)+'</textarea></div>';
     });
@@ -1373,10 +1408,10 @@ function dayDetail(d){
     h+='<div class="card"><div class="row click" data-openw="'+w.id+'"><div class="grow"><b>'+esc(w.sessionName||'Training')+'</b>'+(w.kurz?' <span class="pill a">Kurz</span>':'')+'<div class="small mute">'+w.entries.length+' Übungen · '+setCount(w)+' Sätze</div></div><span class="mute">'+(open?'▾':'▸')+'</span></div>';
     if(open){if(w.note)h+='<div class="notebox">'+esc(w.note)+'</div>';
       w.entries.forEach(function(e){var dn=e.sets.filter(filled);h+='<div class="list-item"><b>'+esc(ex(e.exId).name)+'</b>'+(e.uni?' <span class="small mute">je Seite</span>':'')+'<div class="hist-sets">'+(dn.length?esc(fmtSets(dn)):'<span class="mute">nichts eingetragen</span>')+'</div>'+(e.note?'<div class="small mute">'+esc(e.note)+'</div>':'')+e.sets.map(function(x,i){return x.note?'<div class="small mute">Satz '+(i+1)+': '+esc(x.note)+'</div>':'';}).join('')+'</div>';});}
-    h+='<div class="row" style="margin-top:.5rem"><button class="tiny primary" data-editw="'+w.id+'">Bearbeiten</button><button class="tiny danger" data-act="wdel" data-id="'+w.id+'">Löschen</button></div></div>';
+    h+='<div class="row" style="margin-top:.5rem"><button class="tiny primary" data-editw="'+w.id+'">Bearbeiten</button><span class="grow"></span><button class="tiny danger" data-act="wdel" data-id="'+w.id+'">Löschen</button></div></div>';
   });
   inf.acts.forEach(function(a){
-    h+='<div class="card"><label class="small">Aktivität</label><div class="row"><input data-atext="'+a.id+'" value="'+esc(a.text)+'" class="grow" placeholder="z. B. Gravel-Bike"><input type="number" data-amin="'+a.id+'" value="'+esc(a.minutes||'')+'" placeholder="min" style="width:5rem"><button class="tiny danger" data-adel="'+a.id+'">✕</button></div><textarea data-anote="'+a.id+'" placeholder="Notiz" style="margin-top:.4rem">'+esc(a.note||'')+'</textarea></div>';
+    h+='<div class="card"><label class="small">Aktivität</label><div class="row"><input data-atext="'+a.id+'" value="'+esc(a.text)+'" class="grow" placeholder="z. B. Gravel-Bike"><input type="number" inputmode="numeric" data-amin="'+a.id+'" value="'+esc(a.minutes||'')+'" placeholder="min" style="width:5rem"><button class="tiny danger" data-adel="'+a.id+'">✕</button></div><textarea data-anote="'+a.id+'" placeholder="Notiz" style="margin-top:.4rem">'+esc(a.note||'')+'</textarea></div>';
   });
   h+='<div class="row"><button data-act="addact" class="grow">+ Aktivität</button><div class="grow"><select id="pastsel"><option value="">+ Training nachtragen…</option>'+S.sessions.map(function(s){return '<option value="'+s.id+'">'+esc(s.name)+'</option>';}).join('')+'<option value="__free">Freies Training</option></select></div></div>';
   return h;
@@ -1387,10 +1422,10 @@ function renderExercises(){
   var h='<h1>Übungen</h1>';
   if(ui.exDetail){
     var x=S.exercises[ui.exDetail];if(!x){ui.exDetail=null;return renderExercises();}
-    h+='<button class="tiny" data-act="exback">‹ zurück</button>';
+    h='<button class="navback" data-act="exback">‹ Übungen</button><h1 id="ex_h1">'+esc(x.name)+'</h1>';
     h+='<div class="card"><label class="small">Name</label><input data-xf="name" value="'+esc(x.name)+'">';
     h+='<div class="grid2" style="margin-top:.5rem"><div><label class="small">Muskelgruppe</label><select data-xf="muscle">'+MUSCLES.map(function(m){return '<option'+(m===x.muscle?' selected':'')+'>'+m+'</option>';}).join('')+'</select></div><div><label class="small">Gerät</label><select data-xf="equip">'+EQUIP.map(function(m){return '<option'+(m===x.equip?' selected':'')+'>'+m+'</option>';}).join('')+'</select></div></div>';
-    h+='<div class="grid2" style="margin-top:.5rem"><div><label class="small">Wdh-Ziel von</label><input type="number" data-xf="rep0" value="'+x.reps[0]+'"></div><div><label class="small">Wdh-Ziel bis</label><input type="number" data-xf="rep1" value="'+x.reps[1]+'"></div></div>';
+    h+='<div class="grid2" style="margin-top:.5rem"><div><label class="small">Wdh-Ziel von</label><input type="number" inputmode="numeric" data-xf="rep0" value="'+x.reps[0]+'"></div><div><label class="small">Wdh-Ziel bis</label><input type="number" inputmode="numeric" data-xf="rep1" value="'+x.reps[1]+'"></div></div>';
     h+='<label class="small" style="margin-top:.5rem">Ziel / Rolle</label><input data-xf="goal" value="'+esc(x.goal||'')+'" placeholder="z. B. Quad-Hauptübung, schwer">';
     h+='<label class="small" style="margin-top:.5rem">Ausführung</label><textarea data-xf="cue">'+esc(x.cue||'')+'</textarea>';
     h+='<label class="small" style="margin-top:.5rem">Deine Notiz (Sitzhöhe, Griff, Gerät…)</label><textarea data-xf="note">'+esc(x.note||'')+'</textarea>';
@@ -1438,7 +1473,7 @@ function bwChart(){
     +'<p class="small mute" style="margin-top:0">Punkte: Einzelwerte. Linie: 7-Tage-Schnitt.</p>';}
 function renderMore(){
   var h='<h1>Mehr</h1><div class="group">';
-  h+='<div class="card"><b>Pausentimer</b><p class="small mute">Startet automatisch, sobald du einen Satz abhakst. Die Länge merkt sich die App je Einheit, ±30 s direkt im Timer.</p><div class="chips">'+[60,90,120,150,180,240].map(function(v){return '<button data-act="restset" data-val="'+v+'" class="'+(restDur()===v?'on':'')+'">'+fmtT(v)+'</button>';}).join('')+'</div><label class="row small" style="gap:.45rem;margin-top:.3rem"><input type="checkbox" data-sound="1"'+(S.sound!==false?' checked':'')+'> Ton und Vibration am Ende</label></div>';
+  h+='<div class="card"><b>Pausentimer</b><p class="small mute">Startet automatisch, sobald du einen Satz abhakst. Die Länge merkt sich die App je Einheit, ±30 s direkt im Timer.</p><div class="chips">'+[60,90,120,150,180,240].map(function(v){return '<button data-act="restset" data-val="'+v+'" class="'+(restDur()===v?'on':'')+'">'+fmtT(v)+'</button>';}).join('')+'</div><label class="row small" style="gap:.45rem;margin-top:.3rem"><input type="checkbox" data-sound="1"'+(S.sound!==false?' checked':'')+'> Ton am Ende</label></div>';
   h+='<div class="card"><b>Block</b><p class="small mute">Start des aktuellen 6-Wochen-Blocks. Bestimmt die RIR-Vorgabe auf der Startseite.</p><div class="row"><input type="date" id="blockstart" value="'+S.blockStart+'" class="grow"><button data-act="blocknow">Heute neu starten</button></div></div>';
   h+='<div class="card"><b>Backup</b><p class="small mute">Deine Daten liegen nur in diesem Browser. Einmal pro Woche exportieren.</p><div class="row"><button class="primary" data-act="export">Exportieren</button><button data-act="copyexp">In Zwischenablage</button><button data-act="csv">CSV für Excel</button></div><p class="small mute" style="margin:.5rem 0 0">'+(S.lastExport?'Letztes Backup: '+fmtDate(S.lastExport):'Noch kein Backup gemacht.')+'</p><textarea id="expbox" placeholder="Export erscheint hier" style="margin-top:.5rem;font-size:var(--fs-fn);min-height:4rem"></textarea></div>';
   h+='<div class="card"><b>Import</b><p class="small mute">Ersetzt alle aktuellen Daten.</p><input type="file" id="impfile" accept="application/json,.json"><textarea id="impbox" placeholder="…oder JSON hier einfügen" style="margin-top:.5rem;font-size:var(--fs-fn);min-height:4rem"></textarea><div class="row" style="margin-top:.5rem"><button data-act="import">Importieren</button></div></div>';
@@ -1475,6 +1510,46 @@ function deleteWorkout(id){
   var idx=-1;S.workouts.forEach(function(w,i){if(w.id===id)idx=i;});if(idx<0)return;
   var w=S.workouts.splice(idx,1)[0];if(ui.editId===id)ui.editId=null;save();render();
   toastUndo('Einheit gelöscht',function(){S.workouts.splice(Math.min(idx,S.workouts.length),0,w);});}
+
+/* ---------- Übungsdetail im Verlauf (V7) ---------- */
+/* Öffnen legt einen Verlaufseintrag an; Wischen zurück (popstate) schließt das Detail. Ein Tab-Wechsel nimmt den Eintrag zurück. */
+var _exHist=false;
+function exOpen(id){ui.exDetail=id;if(!_exHist){try{history.pushState({exd:1},'');_exHist=true;}catch(e){}}render();window.scrollTo(0,0);}
+function exHistDrop(){if(_exHist){_exHist=false;try{history.back();}catch(e){}}}
+function exClose(){ui.exDetail=null;exHistDrop();render();}
+window.addEventListener('popstate',function(){if(!_exHist)return;_exHist=false;if(ui.exDetail&&view==='ex'){ui.exDetail=null;render();}});
+
+/* ---------- Sheet per Wischen schließen (V6, Stufe 1) ---------- */
+/* Ziehen am Griff oder am Kopf: Das Sheet folgt dem Finger. Loslassen nach mehr als 30 % der Höhe oder nach einem schnellen
+   Wisch schließt (bei hohen Sheets reichen 180 px), sonst federt es zurück. „Neue Übung" mit Eingaben schließt nicht, es federt mit Widerstand zurück. */
+var sdrag=null,_sdEnd=0;
+function sheetLocked(){var n=ui.newEx;return !!(n&&(n.name.trim()||n.goal.trim()||n.cue.trim()));}
+document.addEventListener('pointerdown',function(ev){
+  var sh=ev.target.closest&&ev.target.closest('.sheet');if(!sh||sdrag||document.querySelector('.overlay.closing'))return;
+  var grip=ev.target===sh&&ev.clientY-sh.getBoundingClientRect().top<32;
+  var head=!!ev.target.closest('.pk-head,.nx-head')&&!ev.target.closest('button,input,textarea,select');
+  if(!grip&&!head)return;
+  sdrag={sh:sh,pid:ev.pointerId,y0:ev.clientY,y:ev.clientY,t:ev.timeStamp,v:0,on:false};});
+document.addEventListener('pointermove',function(ev){
+  var g=sdrag;if(!g||ev.pointerId!==g.pid)return;
+  var dy=ev.clientY-g.y0;
+  if(!g.on){if(Math.abs(dy)<6)return;g.on=true;g.sh.style.transition='none';try{g.sh.setPointerCapture(ev.pointerId);}catch(e){}}
+  var dt=ev.timeStamp-g.t;if(dt>0)g.v=(ev.clientY-g.y)/dt;g.y=ev.clientY;g.t=ev.timeStamp;
+  var d=dy<0?dy/5:(sheetLocked()?dy/4:dy);
+  g.sh.style.transform='translateY('+d.toFixed(1)+'px)';});
+function sheetDragEnd(ev){
+  var g=sdrag;if(!g||ev.pointerId!==g.pid)return;sdrag=null;if(!g.on)return;
+  _sdEnd=Date.now();
+  var dy=g.y-g.y0,v=ev.timeStamp-g.t>100?0:g.v,h=g.sh.offsetHeight;
+  var close=!sheetLocked()&&dy>0&&(dy>Math.min(h*.3,180)||(v>.5&&dy>20));   /* 30 % der Höhe, bei hohen Sheets höchstens 180 px */
+  if(close){g.sh.style.transition='';g.sh.style.transform='';   /* .overlay.closing .sheet fährt ab der aktuellen Position raus */
+    if(ui.newEx)nxCancel();else if(ui.picker)closeOverlay(function(){ui.picker=null;render();});}
+  else{g.sh.style.transition='transform var(--d-sheet) var(--ease-drawer)';g.sh.style.transform='';
+    setTimeout(function(){g.sh.style.transition='';},400);}}
+document.addEventListener('pointerup',sheetDragEnd);
+document.addEventListener('pointercancel',sheetDragEnd);
+/* Nach einem Wisch keinen Klick auslösen */
+document.addEventListener('click',function(ev){if(Date.now()-_sdEnd<350){ev.stopPropagation();ev.preventDefault();}},true);
 
 document.addEventListener('click',function(ev){
   var el=ev.target.closest('[data-tab],[data-start],[data-act],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-del],[data-panker],[data-puni],[data-addslot],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-noteopen],[data-fold],[data-undo],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
@@ -1521,7 +1596,7 @@ document.addEventListener('click',function(ev){
     if(d.fold!==undefined){var fc=document.querySelectorAll('.card.entry')[+d.fold];
       foldCard(wq,+d.fold,!(fc&&fc.classList.contains('folded')));return;}
   }
-  if(d.tab){view=d.tab;ui.exDetail=null;ui.editId=null;ui.finish=false;render();window.scrollTo(0,0);return;}
+  if(d.tab){exHistDrop();view=d.tab;ui.exDetail=null;ui.editId=null;ui.finish=false;render();window.scrollTo(0,0);return;}
   if(d.start){if(S.active){toast('Es läuft schon eine Einheit');return;}S.active=startWorkout(d.start);view='home';save();audioCtx();wakeOn();render();window.scrollTo(0,0);return;}
   if(d.act==='bw'){var v=document.getElementById('bwin').value;if(!v)return;var t=today();S.bodyweight=S.bodyweight.filter(function(x){return x.date!==t;});S.bodyweight.push({date:t,kg:Number(v)});save();render();toast('Gewicht gespeichert');return;}
   /* Workout (aktiv oder Bearbeitung) */
@@ -1530,7 +1605,7 @@ document.addEventListener('click',function(ev){
     if(d.act==='kurz'){w.kurz=!w.kurz;save();render();return;}
     if(d.wrot!==undefined){var wp=d.wrot.split('|'),we=w.entries[+wp[0]],wx=ex(wp[1]);we.exId=wp[1];we.repMin=wx.reps[0];we.repMax=wx.reps[1];if(!wx.uniOk)we.uni=false;save();render();return;}
     if(d.swap!==undefined){openPicker({mode:'swap',ei:+d.swap,muscle:ex(w.entries[+d.swap].exId).muscle},ex(w.entries[+d.swap].exId).muscle);return;}
-    if(d.uni!==undefined){var e=w.entries[+d.uni];e.uni=!e.uni;save();render();return;}
+    if(d.uni!==undefined){var e=w.entries[+d.uni],uv=d.val==='1';if(!!e.uni!==uv){e.uni=uv;save();render();}return;}
     if(d.setplus!==undefined){w.entries[+d.setplus].sets.push(emptySet());save();render();return;}
     if(d.setminus!==undefined){var ss=w.entries[+d.setminus].sets;if(ss.length>1)ss.pop();save();render();return;}
     if(d.copy!==undefined){var en=w.entries[+d.copy];var p=lastPerf(en.exId,en.uni,w.id);if(p){en.sets=p.sets.map(function(s){return {w:s.w,r:s.r,rir:'',note:'',done:false};});save();render();}return;}
@@ -1560,19 +1635,19 @@ document.addEventListener('click',function(ev){
   /* Übungen */
   if(d.exm!==undefined){ui.exMuscle=d.exm;render();return;}
   if(d.exe!==undefined){ui.exEquip=d.exe;render();return;}
-  if(d.exopen){ui.exDetail=d.exopen;render();window.scrollTo(0,0);return;}
-  if(d.act==='exback'){ui.exDetail=null;render();return;}
+  if(d.exopen){exOpen(d.exopen);return;}
+  if(d.act==='exback'){exClose();return;}
   if(d.act==='newex'){openNewEx(ui.exMuscle);return;}
   if(d.exdel){var inPlan=[];S.sessions.forEach(function(s){s.slots.forEach(function(sl){if(sl.exId===d.exdel)inPlan.push(s.name);});});
     var msg='Übung endgültig löschen?'+(inPlan.length?' Sie steht im Plan ('+inPlan.join(', ')+') und wird dort entfernt.':'')+' Historie-Einträge bleiben und zeigen "(gelöschte Übung)".';
-    if(confirm(msg)){S.sessions.forEach(function(s){s.slots=s.slots.filter(function(sl){return sl.exId!==d.exdel;});});delete S.exercises[d.exdel];ui.exDetail=null;save();render();}return;}
+    if(confirm(msg)){S.sessions.forEach(function(s){s.slots=s.slots.filter(function(sl){return sl.exId!==d.exdel;});});delete S.exercises[d.exdel];ui.exDetail=null;exHistDrop();save();render();}return;}
   /* Plan */
   if(d.pickplan){parts=d.pickplan.split('.');var sl0=sessionById(parts[0]).slots[+parts[1]];openPicker({mode:'plan',sid:parts[0],idx:+parts[1],muscle:sl0.muscle},sl0.muscle);return;}
   if(d.addslot){openPicker({mode:'addslot',sid:d.addslot,muscle:''},'');return;}
   if(d.del){parts=d.del.split('.');var ds=sessionById(parts[0]),di=+parts[1],dsl=ds.slots.splice(di,1)[0];save();render();
     toastUndo('Aus dem Plan entfernt',function(){ds.slots.splice(Math.min(di,ds.slots.length),0,dsl);});return;}
   if(d.panker){parts=d.panker.split('.');var sl5=sessionById(parts[0]).slots[+parts[1]];sl5.anker=!sl5.anker;save();render();return;}
-  if(d.puni){parts=d.puni.split('.');var sl6=sessionById(parts[0]).slots[+parts[1]];sl6.uni=!sl6.uni;save();render();return;}
+  if(d.puni){parts=d.puni.split('.');var sl6=sessionById(parts[0]).slots[+parts[1]],pv=d.val==='1';if(!!sl6.uni!==pv){sl6.uni=pv;save();render();}return;}
   if(d.sdel){if(S.sessions.length<=1){toast('Mindestens eine Einheit');return;}
     var si2=-1;S.sessions.forEach(function(q,i){if(q.id===d.sdel)si2=i;});if(si2<0)return;
     var rs=S.sessions.splice(si2,1)[0],oldNext=S.nextIdx;S.nextIdx=0;save();render();
@@ -1630,7 +1705,9 @@ document.addEventListener('input',function(ev){
   if(d.pnote){parts=d.pnote.split('.');sessionById(parts[0]).slots[+parts[1]].note=t.value;saveLazy();return;}
   if(d.sname){sessionById(d.sname).name=t.value;saveLazy();return;}
   if(d.stag){sessionById(d.stag).tag=t.value;saveLazy();return;}
-  if(d.xf){var x=S.exercises[ui.exDetail];if(!x)return;if(d.xf==='rep0'){x.reps[0]=Number(t.value)||x.reps[0];}else if(d.xf==='rep1'){x.reps[1]=Number(t.value)||x.reps[1];}else if(d.xf!=='uniOk'&&d.xf!=='muscle'&&d.xf!=='equip'){x[d.xf]=t.value;}saveLazy();return;}
+  if(d.xf){var x=S.exercises[ui.exDetail];if(!x)return;if(d.xf==='rep0'){x.reps[0]=Number(t.value)||x.reps[0];}else if(d.xf==='rep1'){x.reps[1]=Number(t.value)||x.reps[1];}else if(d.xf!=='uniOk'&&d.xf!=='muscle'&&d.xf!=='equip'){x[d.xf]=t.value;}
+    if(d.xf==='name'){var xh=document.getElementById('ex_h1');if(xh)xh.textContent=t.value;}
+    saveLazy();return;}
 });
 window.addEventListener('beforeunload',save);
 applyTheme();load();render();loadRest();
