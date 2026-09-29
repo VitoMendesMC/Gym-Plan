@@ -386,7 +386,9 @@ button:disabled{opacity:.4;pointer-events:none;box-shadow:none}
 background:var(--ink);color:var(--bg);font-size:var(--fs-sub);font-weight:600;box-shadow:var(--sh-lift);
 opacity:0;pointer-events:none;transform:translateX(-50%) translateY(10px) scale(.96);
 transition:opacity var(--d-ui) var(--ease-out),transform var(--d-ui) var(--ease-out)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1);pointer-events:auto}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+/* Meldungen lassen Tipps durch, nur die Rückgängig-Meldung (.u) fängt sie (M2): die Bestleistung liegt 5 s über dem nächsten Satz */
+.toast.show.u{pointer-events:auto}
 /* Bestleistung (selten, deshalb eine Belohnung). Über die 5 s Anzeige verteilt, damit man sie auch sieht,
    wenn der Blick erst beim Weitertippen hinwandert:
    0–0,9 s Meldung federt hoch · 0,25 s Stern dreht sich rein · 0,7 s erste Funken · 1,5 s Glanz · 2,6 s Stern pocht, zweite Funken.
@@ -591,6 +593,8 @@ background:none;border:0;box-shadow:none;color:var(--acc);font-size:var(--fs-bod
 /* ============ Backup-Hinweis, Undo ============ */
 .banner.warn{background:var(--accsoft);color:var(--acc);border-color:var(--acc)}
 .banner.warn::before{background:var(--acc);animation:none}
+.card.warnc{border:1px solid var(--acc);background:var(--accsoft)}
+.card.warnc p{color:var(--ink)}
 .toast button{background:transparent;border:1px solid rgba(128,128,128,.55);color:inherit;
 padding:.22rem .6rem;font-size:var(--fs-fn);font-weight:700;border-radius:2rem;margin-left:.5rem}
 
@@ -749,17 +753,17 @@ function applyTheme(){var dark=!!(_mqDark&&_mqDark.matches);
 if(_mqDark){if(_mqDark.addEventListener)_mqDark.addEventListener('change',applyTheme);else if(_mqDark.addListener)_mqDark.addListener(applyTheme);}
 try{localStorage.removeItem('trainingsapp.theme');}catch(e){}   /* alter Schlüssel des entfernten Schalters */
 /* Solange die Bestleistung steht, wird sie nicht verdrängt: andere Meldungen erscheinen als zweite Zeile darin */
-function toast(m){undoFn=null;var t=document.getElementById('toast');
+function toast(m,ms){undoFn=null;var t=document.getElementById('toast');
   if(t.classList.contains('pr')&&t.classList.contains('show')){var sub=t.querySelector('.tsub');
     if(!sub){sub=document.createElement('span');sub.className='tsub';t.insertBefore(sub,t.querySelector('.tshine'));}
     sub.textContent=m;return;}
-  t.classList.remove('pr');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1800);}
+  t.classList.remove('pr','u');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},ms||1800);}
 /* Bestleistung: goldener Stern, zwei Funkenwellen, ein Glanz, 5 s sichtbar statt 1,8 s.
    Klasse neu setzen (mit Reflow), damit die Animation auch bei zwei Bestleistungen kurz hintereinander neu startet. */
 var PR_MS=5000;
 function prToast(m){undoFn=null;var t=document.getElementById('toast'),sp='';
   for(var i=0;i<20;i++)sp+='<i'+(i<10?'':' class="w2"')+' style="--a:'+(i*36+(i<10?0:18))+'deg;--d:'+(i%2?-26:-36)+'px"></i>';
-  t.classList.remove('pr','show');void t.offsetWidth;
+  t.classList.remove('pr','show','u');void t.offsetWidth;
   t.innerHTML='<span class="tpr">'+ico('star')+sp+'</span>'+esc(m)+'<span class="tshine"></span>';
   t.classList.add('pr','show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},PR_MS);}
 function closeOverlay(cb){
@@ -791,11 +795,19 @@ function migrate(){
   S.version=DATA_VERSION;
 }
 function fixWorkout(w){w.entries.forEach(function(e){if(e.setsTarget==null)e.setsTarget=e.sets.length;if(e.repMin==null){var x=ex(e.exId);e.repMin=x.reps[0];e.repMax=x.reps[1];}});}
+/* Nicht lesbare Daten werden nie stillschweigend überschrieben (M1): erst als Kopie unter KEY+'.defekt' beiseitelegen.
+   Klappt nicht einmal das (Speicher voll), bleibt das Original liegen und die App speichert nichts, bis die Kopie gelöscht ist. */
+var CKEY=KEY+'.defekt',_hold=null;
 function load(){
-  try{var raw=localStorage.getItem(KEY);if(raw){S=JSON.parse(raw);if(!S.exercises||!S.sessions)throw 0;var vIn=S.version;migrate();if(S.version!==vIn)save();return;}}catch(e){}
+  var raw=null;try{raw=localStorage.getItem(KEY);}catch(e){}
+  if(raw){try{S=JSON.parse(raw);if(!S||!S.exercises||!S.sessions||!S.workouts)throw 0;var vIn=S.version;migrate();if(S.version!==vIn)save();return;}
+    catch(e){try{localStorage.setItem(CKEY,raw);}catch(e2){_hold=raw;}}}
   S=fresh();save();
 }
-function save(){_lpIdx=null;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('Speichern fehlgeschlagen');}}
+function corruptRaw(){if(_hold)return _hold;try{return localStorage.getItem(CKEY);}catch(e){return null;}}
+function save(){_lpIdx=null;if(_hold)return;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('Speichern fehlgeschlagen – bitte ein Backup exportieren',5000);}}
+/* iOS um dauerhaften Speicher bitten (M1); ohne Nachfrage beim Nutzer, schadet nicht, wo es fehlt */
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(function(p){if(!p)navigator.storage.persist();}).catch(function(){});}catch(e){}
 var _lt;function saveLazy(){clearTimeout(_lt);_lt=setTimeout(save,300);}
 
 function ex(id){return S.exercises[id]||{id:id,name:'(gelöschte Übung)',muscle:'Sonstiges',equip:'Sonstiges',uniOk:false,reps:[8,12],goal:'',cue:'',note:''};}
@@ -925,11 +937,14 @@ document.addEventListener('focusin',function(ev){
 
 /* ---------- Sätze abhaken, Stepper, Fortschritt ---------- */
 function isDone(st){return st.done==null?(st.w!==''&&st.r!==''):!!st.done;}
-function progOf(w){var d=0,t=0;w.entries.forEach(function(e){e.sets.forEach(function(st){t++;if(isDone(st))d++;});});return {d:d,t:t};}
+function progOf(w){var d=0,t=0,s=w.kurz?sessionById(w.sessionId):null;
+  w.entries.forEach(function(e){if(s){var sl=slotById(s,e.slotId);if(!(sl&&sl.anker))return;}   /* Kurzversion: ausgeblendete Übungen zählen nicht (M5) */
+    e.sets.forEach(function(st){t++;if(isDone(st))d++;});});return {d:d,t:t};}
 function updateProgress(){var w=wctx();if(!w)return;var p=progOf(w);
   var f=document.getElementById('wpfill'),x=document.getElementById('wptext');
   if(f)f.style.transform='scaleX('+(p.t?(p.d/p.t):0).toFixed(3)+')';
-  if(x)x.textContent='Satz '+p.d+' von '+p.t;}
+  if(x)x.textContent=progTxt(p);}
+function progTxt(p){return p.d+' von '+p.t+' Sätzen';}
 function syncRow(w,ei,si){
   var st=w.entries[ei].sets[si],dn=isDone(st);
   var btn=document.querySelector('button[data-done="'+ei+'.'+si+'"]');
@@ -1229,7 +1244,7 @@ function ringSVG(n,tot){
 /* ---------- Undo ---------- */
 var undoFn=null;
 function toastUndo(msg,fn){undoFn=fn;var t=document.getElementById('toast');t.classList.remove('pr');
-  t.innerHTML=esc(msg)+'<button data-undo="1">Rückgängig</button>';t.classList.add('show');
+  t.innerHTML=esc(msg)+'<button data-undo="1">Rückgängig</button>';t.classList.add('show','u');
   clearTimeout(t._t);}
 /* Die Rückgängig-Meldung bleibt stehen bis zum nächsten Tipp außerhalb (V3). Capture-Phase: läuft vor allen anderen Klicks.
    Scrollen löst keinen Klick aus und lässt sie stehen. */
@@ -1237,6 +1252,15 @@ document.addEventListener('click',function(ev){
   if(!undoFn)return;var t=document.getElementById('toast');
   if(t.contains(ev.target))return;
   undoFn=null;t.classList.remove('show');},true);
+
+/* ---------- Nicht lesbare Daten (M1) ---------- */
+function corruptCard(){if(!corruptRaw())return '';
+  return '<div class="card warnc" role="alert"><b>Alte Daten gesichert</b><p class="small">Deine gespeicherten Daten ließen sich nicht öffnen. Die App hat neu begonnen, die alten Daten liegen unverändert als Kopie bereit. Exportiere sie, bevor du sie löschst.</p>'
+    +'<div class="row"><button class="primary" data-act="rawexp">Exportieren</button><button data-act="rawcopy">Kopieren</button><button class="danger" data-act="rawdel">Kopie löschen</button></div></div>';}
+function rawExport(){var raw=corruptRaw();if(!raw)return;
+  try{var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([raw],{type:'application/json'}));a.download='training-rohdaten-'+today()+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);toast('Rohdaten exportiert');}catch(e){toast('Export nicht möglich – bitte „Kopieren" nutzen',4000);}}
+function rawDelete(){if(!confirm('Kopie der alten Daten endgültig löschen?'))return;
+  try{localStorage.removeItem(CKEY);}catch(e){}_hold=null;save();render();toast('Kopie gelöscht');}
 
 /* ---------- Backup-Erinnerung ---------- */
 function backupNote(){
@@ -1320,6 +1344,7 @@ function renderNow(){
   else if(w&&view==='cal')h=renderWorkout(w,false);
   else{
     if(S.active)h+='<div class="banner" data-tab="home">Einheit läuft: '+esc(S.active.sessionName)+' – fortsetzen</div>';
+    if(view==='home'||view==='more')h+=corruptCard();
     var bn=backupNote();if(bn&&(view==='home'||view==='more'))h+='<div class="banner warn" data-tab="more">'+esc(bn)+' – jetzt exportieren</div>';
     if(view==='home')h+=renderHome();else if(view==='plan')h+=renderPlan();else if(view==='cal')h+=renderCal();else if(view==='ex')h+=renderExercises();else h+=renderMore();
   }
@@ -1380,7 +1405,7 @@ function renderWorkout(a,isActive){
   var dn=function(mt){return '<div class="row" style="margin-top:'+mt+'"><input type="date" data-wdate="1" value="'+esc(a.date)+'" style="width:auto"><input data-wname="1" value="'+esc(a.sessionName||'')+'" class="grow" placeholder="Name der Einheit"></div>';};
   if(!isActive)h+=dn('.4rem');
   var pg=progOf(a);
-  h+='<div class="wprog"><div class="wpbar"><i id="wpfill" style="transform:scaleX('+(pg.t?(pg.d/pg.t).toFixed(3):0)+')"></i></div><span id="wptext">Satz '+pg.d+' von '+pg.t+'</span></div>';
+  h+='<div class="wprog"><div class="wpbar"><i id="wpfill" style="transform:scaleX('+(pg.t?(pg.d/pg.t).toFixed(3):0)+')"></i></div><span id="wptext">'+progTxt(pg)+'</span></div>';
   h+='</div>';
   if(isActive&&a.kurz)h+='<p class="small mute">Nur Anker-Übungen, je 2 Sätze empfohlen. Zählt als volle Einheit.</p>';
   a.entries.forEach(function(e,ei){
@@ -1613,8 +1638,15 @@ function doExport(){
   try{var blob=new Blob([json],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='training-backup-'+today()+'.json';document.body.appendChild(a);a.click();document.body.removeChild(a);}catch(e){}
   toast('Export erstellt');
 }
+/* Import (M1): Datei erst vollständig prüfen (inkl. Migration und Aufbau der Ansicht), sonst bleibt alles wie es war.
+   Danach lässt sich der Import rückgängig machen, der alte Stand liegt bis zum nächsten Tipp im Speicher. */
 function doImport(text){
-  try{var o=JSON.parse(text);if(!o.exercises||!o.sessions||!o.workouts)throw 0;if(!confirm('Alle aktuellen Daten ersetzen?'))return;S=o;migrate();save();render();toast('Importiert');}catch(e){toast('Ungültige Datei');}
+  var o;try{o=JSON.parse(text);if(!o||!o.exercises||!o.sessions||!Array.isArray(o.workouts))throw 0;}catch(e){toast('Ungültige Datei – deine Daten sind unverändert',4000);return;}
+  if(!confirm('Alle aktuellen Daten ersetzen?'))return;
+  var prev=S;
+  try{S=o;migrate();renderNow();}catch(e){S=prev;render();toast('Ungültige Datei – deine Daten sind unverändert',4000);return;}
+  save();render();
+  toastUndo('Importiert',function(){S=prev;});
 }
 function deleteWorkout(id){
   var idx=-1;S.workouts.forEach(function(w,i){if(w.id===id)idx=i;});if(idx<0)return;
@@ -1717,7 +1749,8 @@ document.addEventListener('click',function(ev){
     if(d.swap!==undefined){openPicker({mode:'swap',ei:+d.swap,muscle:ex(w.entries[+d.swap].exId).muscle},ex(w.entries[+d.swap].exId).muscle);return;}
     if(d.uni!==undefined){var e=w.entries[+d.uni],uv=d.val==='1';if(!!e.uni!==uv){e.uni=uv;save();render();}return;}
     if(d.setplus!==undefined){w.entries[+d.setplus].sets.push(emptySet());save();render();return;}
-    if(d.setminus!==undefined){var ss=w.entries[+d.setminus].sets;if(ss.length>1)ss.pop();save();render();return;}
+    if(d.setminus!==undefined){var ss=w.entries[+d.setminus].sets;if(ss.length<2)return;var gone=ss.pop();save();render();
+      if(filled(gone)||gone.done||gone.note)toastUndo('Satz '+(ss.length+1)+' entfernt',function(){ss.push(gone);});return;}
     if(d.copy!==undefined){var en=w.entries[+d.copy];var p=lastPerf(en.exId,en.uni,w.id);if(p){en.sets=p.sets.map(function(s){return {w:s.w,r:s.r,rir:'',note:'',done:false};});save();render();}return;}
     if(d.persist!==undefined){var en2=w.entries[+d.persist];var sl2=slotById(sessionById(w.sessionId),en2.slotId);if(sl2){sl2.exId=en2.exId;sl2.uni=en2.uni;sl2.muscle=ex(en2.exId).muscle;sl2.repMin=en2.repMin;sl2.repMax=en2.repMax;save();render();toast('Plan aktualisiert');}return;}
     if(d.edel!==undefined){var ri=+d.edel,re=w.entries.splice(ri,1)[0],rw=w;save();render();
@@ -1782,6 +1815,9 @@ document.addEventListener('click',function(ev){
   if(d.act==='export'){doExport();return;}
   if(d.act==='csv'){doCSV();return;}
   if(d.act==='copyexp'){S.lastExport=today();save();render();var json=JSON.stringify(S);var box=document.getElementById('expbox');box.value=json;box.select();try{navigator.clipboard.writeText(json).then(function(){toast('Kopiert');});}catch(e){document.execCommand('copy');toast('Kopiert');}return;}
+  if(d.act==='rawexp'){rawExport();return;}
+  if(d.act==='rawcopy'){var rw=corruptRaw();try{navigator.clipboard.writeText(rw).then(function(){toast('Kopiert');},function(){toast('Kopieren nicht möglich',4000);});}catch(e){toast('Kopieren nicht möglich',4000);}return;}
+  if(d.act==='rawdel'){rawDelete();return;}
   if(d.act==='import'){var f=document.getElementById('impfile').files[0];if(f){var rd=new FileReader();rd.onload=function(){doImport(rd.result);};rd.readAsText(f);}else doImport(document.getElementById('impbox').value);return;}
   if(d.act==='resetex'){if(confirm('Standardübungen wiederherstellen und Ziel/Ausführung aktualisieren?')){Object.keys(SEED).forEach(function(k){var old=S.exercises[k];var n=JSON.parse(JSON.stringify(SEED[k]));if(old&&old.note)n.note=old.note;S.exercises[k]=n;});save();render();toast('Wiederhergestellt');}return;}
 });
