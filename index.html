@@ -298,6 +298,8 @@ margin:.5rem -.9rem;padding:.1rem .9rem;-webkit-overflow-scrolling:touch;
 font-size:var(--fs-c2);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
 .stats span{display:flex;flex-direction:column;gap:.1rem;background:var(--card);
 border:1px solid var(--cardline);border-radius:var(--rm);padding:.55rem .65rem;box-shadow:var(--sh)}
+.stats-note{margin:-.3rem 0 .7rem}
+#blockstart{min-width:10.5rem}   /* Datum nie abschneiden; der Knopf rutscht sonst in die nächste Zeile */
 .stats b{font-family:var(--num);font-size:var(--fs-t1);font-weight:var(--fw-num);line-height:1;
 color:var(--ink);text-transform:none}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin:.6rem 0 .5rem}
@@ -1380,8 +1382,8 @@ function renderNow(){
 }
 function renderHome(){
   var w=weekInfo();var next=S.sessions[S.nextIdx%S.sessions.length];
-  var h='<h1>Heute</h1><div class="week">'+ringSVG(Math.max(1,w.wk),6)+'<div class="grow"><b>Block-Woche '+Math.max(1,w.wk)+' von 6</b><span class="wkrir">'+esc(w.rir)+'</span>'+(w.wk>6?'<div class="row" style="margin-top:.4rem"><button class="tiny acc" data-act="blocknow">Neuen Block starten</button></div>':'')+'</div></div>';
-  h+='<p class="mute small">Plan: '+esc(S.planName)+'. Nächste Einheit laut Reihenfolge: <b>'+esc(next?next.name:'–')+'</b>.</p>';
+  var h='<h1>Heute</h1><div class="week">'+ringSVG(Math.max(1,w.wk),6)+'<div class="grow"><b>Block-Woche '+Math.max(1,w.wk)+' von 6</b><span class="wkrir">'+esc(w.rir)+'</span>'+(w.wk>6?'<div class="row" style="margin-top:.4rem"><button class="tiny acc" data-act="blocknow">Neuer Block ab heute</button></div>':'')+'</div></div>';
+  h+='<p class="mute small">Plan: '+esc(S.planName)+'</p>';
   S.sessions.forEach(function(s,i){
     var last=null;S.workouts.forEach(function(x){if(x.sessionId===s.id&&(!last||x.date>last.date))last=x;});
     h+='<button class="session-btn'+(i===S.nextIdx%S.sessions.length?' next':'')+'" data-start="'+s.id+'"><b>'+esc(s.name)+'</b><span class="mute small">'+esc(s.tag)+(last?' · zuletzt '+fmtDate(last.date):' · noch nie')+'</span></button>';
@@ -1395,12 +1397,12 @@ function volCard(){
   var cw=volWeek(today()),lw=volWeek(addDays(weekStart(today()),-7));
   var keys=Object.keys(cw),title='Volumen diese Woche',sub='',cmp=lw;
   if(!keys.length){cw=lw;keys=Object.keys(lw);cmp=volWeek(addDays(weekStart(today()),-14));
-    title='Volumen vergangene Woche';sub='Diese Woche ist noch nichts geloggt. ';}
+    title='Volumen vergangene Woche';sub='Diese Woche ist noch nichts eingetragen. ';}
   if(!keys.length)return '<div class="card"><b>Volumen diese Woche</b><p class="small mute">Sobald du Sätze einträgst, siehst du hier, wie sie sich auf die Muskelgruppen verteilen.</p></div>';
   keys.sort(function(a,b){return cw[b]-cw[a];});
   var max=cw[keys[0]];
   var tot=0;keys.forEach(function(k){tot+=cw[k];});
-  var h='<div class="card"><b>'+title+'</b><p class="small mute">'+sub+tot+' Sätze, Vergleichswert ist die Woche davor.</p>';
+  var h='<div class="card"><b>'+title+'</b><p class="small mute">'+sub+tot+' Sätze, verglichen mit der Woche davor.</p>';
   keys.forEach(function(k){
     var n=cw[k],o=cmp[k]||0,d=n-o;
     h+='<div class="vol" data-m="'+esc(k)+'"><span class="vname">'+esc(k)+'</span>'
@@ -1468,7 +1470,7 @@ function renderWorkout(a,isActive){
   if(isActive)h+='<div class="card"><label class="small">Einheit</label>'+dn('0')+'<label class="small" style="margin-top:.75rem">Notiz</label><textarea data-wnote="1" placeholder="Schlaf, Energie, Gym voll, was auch immer relevant ist">'+esc(a.note)+'</textarea></div>';
   else h+='<div class="card"><label class="small">Notiz zur Einheit</label><textarea data-wnote="1" placeholder="Schlaf, Energie, Gym voll, was auch immer relevant ist">'+esc(a.note)+'</textarea></div>';
   if(isActive){
-    if(ui.finish){h+='<div class="card"><b>Einheit beenden?</b><p class="small mute">Speichern übernimmt alles, was eingetragen ist, auch wenn Übungen offen sind. Leere Sätze werden ignoriert.</p><div class="row"><button class="primary grow" data-act="finishsave">Speichern</button></div><div class="row" style="margin-top:.5rem"><button class="grow" data-act="finishback">Weitertrainieren</button></div><div class="row" style="margin-top:1.6rem"><button class="danger grow" data-act="finishdiscard">Verwerfen</button></div></div>';}   /* untereinander wie ein iOS-Dialog, Verwerfen abgesetzt */
+    if(ui.finish){h+='<div class="card"><b>Einheit beenden?</b><p class="small mute">Gespeichert wird alles Eingetragene, auch wenn Übungen offen sind. Leere Sätze fallen weg.</p><div class="row"><button class="primary grow" data-act="finishsave">Speichern</button></div><div class="row" style="margin-top:.5rem"><button class="grow" data-act="finishback">Weitertrainieren</button></div><div class="row" style="margin-top:1.6rem"><button class="danger grow" data-act="finishdiscard">Verwerfen</button></div></div>';}   /* untereinander wie ein iOS-Dialog, Verwerfen abgesetzt */
     else h+='<div class="row" style="margin-top:1rem"><button class="primary grow" data-act="finish">Einheit beenden</button></div>';
   }else{
     h+='<div class="row" style="margin-top:1rem"><button class="primary grow" data-act="editdone">Fertig</button></div>';
@@ -1478,7 +1480,7 @@ function renderWorkout(a,isActive){
 }
 
 function renderPlan(){
-  var h='<h1>Plan</h1><div class="card"><b>'+esc(S.planName)+'</b><p class="small mute">Änderungen hier sind dauerhaft. Reihenfolge der Einheiten = Reihenfolge im Zyklus.</p>';
+  var h='<h1>Plan</h1><div class="card"><b>'+esc(S.planName)+'</b><p class="small mute">Änderungen gelten für alle künftigen Einheiten. In dieser Reihenfolge schlägt „Heute“ die nächste Einheit vor.</p>';
   h+='<details><summary>Anderen Split laden</summary><p class="small mute">Ersetzt den aktuellen Plan komplett. Historie und Übungen bleiben.</p><div class="row"><select id="tplsel" class="grow">'+Object.keys(TEMPLATES).map(function(k){return '<option value="'+k+'">'+esc(TEMPLATES[k].name)+'</option>';}).join('')+'</select><button data-act="loadtpl">Laden</button></div></details></div>';
   S.sessions.forEach(function(s,si){
     var open=!!ui.planOpen[s.id];
@@ -1513,6 +1515,7 @@ function renderCal(){
   var h='<h1>Kalender</h1>'+chips([['week','Woche'],['month','Monat'],['year','Jahr'],['list','Liste']],c.mode,'calmode');
   var ws=weekStart(t),y=t.slice(0,4),m=t.slice(0,7);
   h+='<div class="stats s4"><span>Woche <b>'+countRange(ws,addDays(ws,6))+'</b></span><span>Monat <b>'+countRange(m+'-01',m+'-31')+'</b></span><span>Jahr <b>'+countRange(y+'-01-01',y+'-12-31')+'</b></span><span>Serie <b>'+streakWeeks()+'</b></span></div>';
+  h+='<p class="small mute stats-note">Einheiten im Zeitraum. Serie: Wochen in Folge mit mindestens einer Einheit.</p>';
   if(c.mode==='month')h+=calMonth(c.anchor);else if(c.mode==='week')h+=calWeek(c.anchor);else if(c.mode==='year')h+=calYear(c.anchor);else h+=calList();
   if(c.mode!=='list')h+=dayDetail(c.sel);
   return h;
@@ -1545,7 +1548,7 @@ function calYear(anchor){
 function calList(){
   var items=[];S.workouts.forEach(function(w){items.push({d:w.date,k:'w',o:w});});S.activities.forEach(function(a){items.push({d:a.date,k:'a',o:a});});
   items.sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0;});
-  if(!items.length)return '<p class="mute">Noch nichts geloggt. Starte auf „Heute“ eine Einheit oder trag in der Monatsansicht ein Training nach.</p>';
+  if(!items.length)return '<p class="mute">Noch nichts eingetragen. Starte auf „Heute“ eine Einheit oder trag in der Monatsansicht ein Training nach.</p>';
   var h='<div class="card">';
   items.forEach(function(it){
     if(it.k==='w'){var w=it.o;h+='<div class="list-item click" data-editw="'+w.id+'"><b>'+esc(w.sessionName||'Training')+'</b>'+(w.kurz?' <span class="pill a">Kurz</span>':'')+'<div class="small mute">'+fmtDate(w.date)+' · '+w.entries.length+' Übungen · '+setCount(w)+' Sätze</div></div>';}
@@ -1596,9 +1599,9 @@ function renderExercises(){
           if(!bst||mx>bst.v)bst={v:mx,s:ms,date:r.date};}});
       if(bst)h+='<div class="best"><b>'+esc(dk(bst.s.w))+' × '+esc(bst.s.r)+'</b><span class="mute small">Bestleistung am '+fmtDate(bst.date)+' · '+nfmt(bst.v)+' kg geschätztes 1RM</span></div>';
       if(pts.length>1)h+=chartHTML([{pts:pts,color:'var(--quad)',dots:1}],{x0:fmtDate(asc[0].date),x1:fmtDate(asc[asc.length-1].date)})
-        +'<p class="small mute" style="margin-top:0">Geschätztes 1RM je Einheit (bester Satz).</p>';}
-    if(!rows.length)h+='<p class="mute small">Noch nie geloggt. Sobald du die Übung in einer Einheit einträgst, erscheint hier der Verlauf.</p>';
-    else{h+='<div class="tablewrap"><table class="cmp"><tr><th>Datum</th><th>Sätze</th><th>Best</th></tr>';rows.forEach(function(r){var best=r.sets.reduce(function(m,s){var v=Number(s.w||0)*(1+Number(s.r||0)/30);return v>m.v?{v:v,s:s}:m;},{v:-1,s:null});h+='<tr><td>'+fmtDate(r.date)+(r.uni?'<br><span class="small mute">je Seite</span>':'')+'</td><td class="hist-sets">'+esc(fmtSets(r.sets))+(r.note?'<div class="small mute">'+esc(r.note)+'</div>':'')+'</td><td class="small">'+(best.s?esc(dk(best.s.w))+'×'+esc(best.s.r):'')+'</td></tr>';});h+='</table></div>';}
+        +'<p class="small mute" style="margin-top:0">Geschätztes Maximalgewicht für eine Wiederholung (1RM), aus dem besten Satz je Einheit.</p>';}
+    if(!rows.length)h+='<p class="mute small">Noch nie eingetragen. Sobald du die Übung in einer Einheit einträgst, erscheint hier der Verlauf.</p>';
+    else{h+='<div class="tablewrap"><table class="cmp"><tr><th>Datum</th><th>Sätze</th><th>Bester Satz</th></tr>';rows.forEach(function(r){var best=r.sets.reduce(function(m,s){var v=Number(s.w||0)*(1+Number(s.r||0)/30);return v>m.v?{v:v,s:s}:m;},{v:-1,s:null});h+='<tr><td>'+fmtDate(r.date)+(r.uni?'<br><span class="small mute">je Seite</span>':'')+'</td><td class="hist-sets">'+esc(fmtSets(r.sets))+(r.note?'<div class="small mute">'+esc(r.note)+'</div>':'')+'</td><td class="small">'+(best.s?esc(dk(best.s.w))+'×'+esc(best.s.r):'')+'</td></tr>';});h+='</table></div>';}
     return h;
   }
   h+='<div class="row"><input id="ex_q" type="search" class="grow" placeholder="Übung suchen…" value="'+esc(ui.exQ||'')+'"><button class="primary" data-act="newex">+ Neu</button></div>';
@@ -1628,10 +1631,10 @@ function bwChart(){
     +'<p class="small mute" style="margin-top:0">Punkte: Einzelwerte. Linie: 7-Tage-Schnitt.</p>';}
 function renderMore(){
   var h='<h1>Mehr</h1><div class="group">';
-  h+='<div class="card"><b>Pausentimer</b><p class="small mute">Startet automatisch, sobald du einen Satz abhakst. Die Länge merkt sich die App je Einheit, ±30 s direkt im Timer.</p><div class="chips">'+[60,90,120,150,180,240].map(function(v){return '<button data-act="restset" data-val="'+v+'" class="'+(restDur()===v?'on':'')+'">'+fmtT(v)+'</button>';}).join('')+'</div><label class="tgl" style="margin-top:.3rem">Ton am Ende<input type="checkbox" switch data-sound="1"'+(S.sound!==false?' checked':'')+'></label></div>';
-  h+='<div class="card"><b>Block</b><p class="small mute">Start des aktuellen 6-Wochen-Blocks. Bestimmt die RIR-Vorgabe auf der Startseite.</p><div class="row"><input type="date" id="blockstart" value="'+S.blockStart+'" class="grow"><button data-act="blocknow">Heute neu starten</button></div></div>';
-  h+='<div class="card"><b>Backup</b><p class="small mute">Deine Daten liegen nur in diesem Browser. Einmal pro Woche exportieren.</p><div class="row"><button class="primary" data-act="export">Exportieren</button><button data-act="copyexp">In Zwischenablage</button><button data-act="csv">CSV für Excel</button></div><p class="small mute" style="margin:.5rem 0 0">'+(S.lastExport?'Letztes Backup: '+fmtDate(S.lastExport):'Noch kein Backup gemacht.')+'</p><textarea id="expbox" placeholder="Export erscheint hier" style="margin-top:.5rem;font-size:var(--fs-fn);min-height:4rem"></textarea></div>';
-  h+='<div class="card"><b>Import</b><p class="small mute">Ersetzt alle aktuellen Daten.</p><input type="file" id="impfile" accept="application/json,.json"><textarea id="impbox" placeholder="…oder JSON hier einfügen" style="margin-top:.5rem;font-size:var(--fs-fn);min-height:4rem"></textarea><div class="row" style="margin-top:.5rem"><button data-act="import">Importieren</button></div></div>';
+  h+='<div class="card"><b>Pausentimer</b><p class="small mute">Startet, sobald du einen Satz abhakst. Die Länge gilt je Einheit, im Timer änderst du sie mit −30 und +30.</p><div class="chips">'+[60,90,120,150,180,240].map(function(v){return '<button data-act="restset" data-val="'+v+'" class="'+(restDur()===v?'on':'')+'">'+fmtT(v)+'</button>';}).join('')+'</div><label class="tgl" style="margin-top:.3rem">Ton am Ende<input type="checkbox" switch data-sound="1"'+(S.sound!==false?' checked':'')+'></label></div>';
+  h+='<div class="card"><b>Block</b><p class="small mute">Start des aktuellen 6-Wochen-Blocks. Danach richtet sich die RIR-Vorgabe auf „Heute“.</p><div class="row"><input type="date" id="blockstart" value="'+S.blockStart+'" class="grow"><button data-act="blocknow">Neuer Block ab heute</button></div></div>';
+  h+='<div class="card"><b>Backup</b><p class="small mute">Deine Daten liegen nur auf diesem Gerät, in dieser App. Exportiere sie einmal pro Woche.</p><div class="row"><button class="primary" data-act="export">Exportieren</button><button data-act="copyexp">Kopieren</button><button data-act="csv">CSV für Excel</button></div><p class="small mute" style="margin:.5rem 0 0">'+(S.lastExport?'Letztes Backup: '+fmtDate(S.lastExport):'Noch kein Backup gemacht.')+'</p><textarea id="expbox" placeholder="Export erscheint hier" style="margin-top:.5rem;font-size:var(--fs-fn);min-height:4rem"></textarea></div>';
+  h+='<div class="card"><b>Import</b><p class="small mute">Ersetzt alle aktuellen Daten durch das Backup. Direkt danach lässt sich das rückgängig machen.</p><input type="file" id="impfile" accept="application/json,.json"><textarea id="impbox" placeholder="…oder kopiertes Backup hier einfügen" style="margin-top:.5rem;font-size:var(--fs-fn);min-height:4rem"></textarea><div class="row" style="margin-top:.5rem"><button data-act="import">Importieren</button></div></div>';
   h+='<div class="card"><b>Körpergewicht</b>'+bwChart()+(S.bodyweight.length===1?'<p class="mute small">Ein Eintrag. Ab dem zweiten erscheint hier der Verlauf.</p>':'')+(S.bodyweight.length?'<details><summary>Alle Einträge</summary><div class="tablewrap"><table class="cmp">'+S.bodyweight.slice().reverse().map(function(b){return '<tr><td>'+fmtDate(b.date)+'</td><td>'+b.kg+' kg</td></tr>';}).join('')+'</table></div></details>':'<p class="mute small">Noch keine Einträge.</p>')+'</div>';
   h+='<div class="card"><b>Übungsliste zurücksetzen</b><p class="small mute">Stellt gelöschte Standardübungen wieder her und aktualisiert Ziel und Ausführung. Eigene Übungen, eigene Notizen und Historie bleiben.</p><button class="danger" data-act="resetex">Standardübungen wiederherstellen</button></div></div>';
   return h;
@@ -1691,7 +1694,7 @@ function doExport(){
    Danach lässt sich der Import rückgängig machen, der alte Stand liegt bis zum nächsten Tipp im Speicher. */
 function doImport(text){
   var o;try{o=JSON.parse(text);if(!o||!o.exercises||!o.sessions||!Array.isArray(o.workouts))throw 0;}catch(e){toast('Ungültige Datei – deine Daten sind unverändert',4000);return;}
-  if(!confirm('Alle aktuellen Daten ersetzen?'))return;
+  if(!confirm('Import ersetzt Plan, Übungen und alle Einheiten durch das Backup. Fortfahren?'))return;
   var prev=S;
   try{S=o;migrate();renderNow();}catch(e){S=prev;render();toast('Ungültige Datei – deine Daten sind unverändert',4000);return;}
   save();render();
@@ -1796,8 +1799,8 @@ document.addEventListener('click',function(ev){
       foldCard(wq,+d.fold,!(fc&&fc.classList.contains('folded')));return;}
   }
   if(d.tab){exHistDrop();view=d.tab;ui.exDetail=null;ui.editId=null;ui.finish=false;render();window.scrollTo(0,0);return;}
-  if(d.start){if(S.active){toast('Es läuft schon eine Einheit');return;}S.active=startWorkout(d.start);S.active.t0=Date.now();view='home';save();audioCtx();wakeOn();render();window.scrollTo(0,0);return;}
-  if(d.act==='bw'){var v=document.getElementById('bwin').value;if(!v)return;var t=today();S.bodyweight=S.bodyweight.filter(function(x){return x.date!==t;});S.bodyweight.push({date:t,kg:Number(v)});save();render();toast('Gewicht gespeichert');return;}
+  if(d.start){if(S.active){toast('Es läuft schon eine Einheit. Beende sie zuerst.',3000);return;}S.active=startWorkout(d.start);S.active.t0=Date.now();view='home';save();audioCtx();wakeOn();render();window.scrollTo(0,0);return;}
+  if(d.act==='bw'){var v=document.getElementById('bwin').value;if(!v)return;var t=today();S.bodyweight=S.bodyweight.filter(function(x){return x.date!==t;});S.bodyweight.push({date:t,kg:Number(v)});save();render();toast('Körpergewicht gespeichert');return;}
   /* Workout (aktiv oder Bearbeitung) */
   var w=wctx();
   if(w){
@@ -1848,7 +1851,7 @@ document.addEventListener('click',function(ev){
     toastUndo('Aus dem Plan entfernt',function(){ds.slots.splice(Math.min(di,ds.slots.length),0,dsl);});return;}
   if(d.panker){parts=d.panker.split('.');var sl5=sessionById(parts[0]).slots[+parts[1]];sl5.anker=!sl5.anker;save();render();return;}
   if(d.puni){parts=d.puni.split('.');var sl6=sessionById(parts[0]).slots[+parts[1]],pv=d.val==='1';if(!!sl6.uni!==pv){sl6.uni=pv;save();render();}return;}
-  if(d.sdel){if(S.sessions.length<=1){toast('Mindestens eine Einheit');return;}
+  if(d.sdel){if(S.sessions.length<=1){toast('Der Plan braucht mindestens eine Einheit',3000);return;}
     var si2=-1;S.sessions.forEach(function(q,i){if(q.id===d.sdel)si2=i;});if(si2<0)return;
     var rs=S.sessions.splice(si2,1)[0],oldNext=S.nextIdx;S.nextIdx=0;save();render();
     toastUndo('Plan-Einheit gelöscht',function(){S.sessions.splice(Math.min(si2,S.sessions.length),0,rs);S.nextIdx=oldNext;});return;}
@@ -1874,7 +1877,7 @@ document.addEventListener('click',function(ev){
   if(d.act==='csv'){doCSV();return;}
   if(d.act==='copyexp'){S.lastExport=today();save();render();var json=JSON.stringify(S);var box=document.getElementById('expbox');box.value=json;box.select();try{navigator.clipboard.writeText(json).then(function(){toast('Kopiert');});}catch(e){document.execCommand('copy');toast('Kopiert');}return;}
   if(d.act==='rawexp'){rawExport();return;}
-  if(d.act==='rawcopy'){var rw=corruptRaw();try{navigator.clipboard.writeText(rw).then(function(){toast('Kopiert');},function(){toast('Kopieren nicht möglich',4000);});}catch(e){toast('Kopieren nicht möglich',4000);}return;}
+  if(d.act==='rawcopy'){var rw=corruptRaw();try{navigator.clipboard.writeText(rw).then(function(){toast('Kopiert');},function(){toast('Kopieren nicht möglich – bitte „Exportieren“ nutzen',4000);});}catch(e){toast('Kopieren nicht möglich – bitte „Exportieren“ nutzen',4000);}return;}
   if(d.act==='rawdel'){rawDelete();return;}
   if(d.act==='import'){var f=document.getElementById('impfile').files[0];if(f){var rd=new FileReader();rd.onload=function(){doImport(rd.result);};rd.readAsText(f);}else doImport(document.getElementById('impbox').value);return;}
   if(d.act==='resetex'){if(confirm('Standardübungen wiederherstellen und Ziel/Ausführung aktualisieren?')){Object.keys(SEED).forEach(function(k){var old=S.exercises[k];var n=JSON.parse(JSON.stringify(SEED[k]));if(old&&old.note)n.note=old.note;S.exercises[k]=n;});save();render();toast('Wiederhergestellt');}return;}
