@@ -32,7 +32,7 @@
 --sheet:#F2F3EE;--cardline:transparent;--seg:#FFFFFF;
 --glass:rgba(242,243,238,.82);
 --quad:#12694A;--quadsoft:#DCEFE4;--acc:#AC5E16;--accsoft:#F8E6CE;--danger:#A63527;
---pr:#8F6508;--prsoft:#F7EBCD;
+--pr:#8F6508;--prsoft:#F7EBCD;--pron:#E3B547;   /* --pron: Gold auf der Meldung (Hintergrund --ink) */
 --act:#AC5E16;
 --m-quad:#12694A;--m-ham:#0E6C85;--m-add:#5E7A24;--m-glute:#8B3FA3;--m-back:#2B5BA8;--m-chest:#B23A2E;
 --m-sh:#9C6712;--m-tri:#6B54A3;--m-bi:#9C3A6B;--m-calf:#7A5636;--m-abs:#1C7A6C;--m-misc:#6A757D;
@@ -54,7 +54,7 @@
 --sheet:#1E242A;--cardline:var(--line);--seg:#2A3238;
 --glass:rgba(16,20,24,.82);
 --quad:#4FC094;--quadsoft:#16332B;--acc:#E4A251;--accsoft:#3A2A16;--danger:#E07A6E;
---pr:#E3B547;--prsoft:#3D330F;
+--pr:#E3B547;--prsoft:#3D330F;--pron:#8F6508;
 --act:#E4A251;
 --m-quad:#4FC094;--m-ham:#4FBBD6;--m-add:#A3C55C;--m-glute:#CC8BE0;--m-back:#7FA9EE;--m-chest:#EE8A7B;
 --m-sh:#E3B052;--m-tri:#A793EA;--m-bi:#E58AB6;--m-calf:#C9A075;--m-abs:#4FC3B0;--m-misc:#8F9AA2;
@@ -350,6 +350,23 @@ background:var(--ink);color:var(--bg);font-size:var(--fs-sub);font-weight:600;bo
 opacity:0;pointer-events:none;transform:translateX(-50%) translateY(10px) scale(.96);
 transition:opacity var(--d-ui) var(--ease-out),transform var(--d-ui) var(--ease-out)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+/* Bestleistung (selten, deshalb eine Belohnung): Meldung federt hoch, Stern dreht sich rein, 8 Funken, ein Glanz.
+   Nur transform/opacity. Ohne Animation (Bewegung reduzieren) bleiben Funken und Glanz unsichtbar, der Stern steht still. */
+.toast.pr{overflow:visible;padding-left:.75rem}
+.toast.pr.show{animation:prtoast 560ms var(--ease-out)}
+@keyframes prtoast{0%{opacity:0;transform:translateX(-50%) translateY(14px) scale(.9)}
+55%{opacity:1;transform:translateX(-50%) translateY(-2px) scale(1.04)}100%{transform:translateX(-50%) translateY(0) scale(1)}}
+.tpr{position:relative;display:inline-block;margin-right:.45rem;color:var(--pron);vertical-align:-.2em}
+.tpr svg.i{width:1.25em;height:1.25em;vertical-align:0;display:block;animation:prstar 620ms var(--ease-out) 80ms both}
+@keyframes prstar{0%{opacity:0;transform:scale(.4) rotate(-45deg)}50%{opacity:1;transform:scale(1.25) rotate(8deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+.tpr i{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--pron);opacity:0;
+animation:prspark 640ms var(--ease-out) 180ms}
+@keyframes prspark{0%{opacity:1;transform:rotate(var(--a)) translateY(-6px) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateY(-22px) scale(.3)}}
+.tshine{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.tshine::after{content:"";position:absolute;top:0;bottom:0;left:0;width:45%;opacity:0;
+background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--pron) 45%,transparent),transparent);
+animation:prshine 700ms var(--ease-in-out) 420ms}
+@keyframes prshine{0%{opacity:1;transform:translateX(-110%)}100%{opacity:1;transform:translateX(240%)}}
 
 /* ============ Satzzeilen mit Haken ============ */
 /* Feste Spalten: Haken und Notiz 44 px (px statt rem, damit größere Schrift die Zeile nicht sprengt), 4 px Luft.
@@ -670,6 +687,7 @@ function mpill(m){return '<span class="pill m" data-m="'+esc(m)+'">'+esc(m)+'</s
 var ICO={home:'<path d="M4 10.8 12 4.2l8 6.6V20a1 1 0 0 1-1 1h-4.2v-5.6H9.2V21H5a1 1 0 0 1-1-1z"/>',plan:'<path d="M4 6.5h16M4 12h16M4 17.5h10"/>',cal:'<rect x="3.4" y="5.2" width="17.2" height="15.4" rx="2.6"/><path d="M3.4 10.2h17.2M8 3.2v3.6M16 3.2v3.6"/>',ex:'<rect x="4.1" y="8.5" width="3.3" height="7" rx="1.1"/><rect x="16.6" y="8.5" width="3.3" height="7" rx="1.1"/><path d="M7.4 12h9.2M2.2 10.6v2.8M21.8 10.6v2.8"/>',more:'<circle cx="5.5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.5" fill="currentColor" stroke="none"/>'};
 /* Block H: ein Symbolsatz statt Textzeichen (C4). Aktive Tabs gefüllt (N2), Plan mit dickerem Strich. */
 ICO.x='<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>';
+ICO.star='<path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" fill="currentColor"/>';
 ICO.swap='<path d="M4.5 8.5h14M15 5l3.5 3.5L15 12M19.5 15.5h-14M9 12l-3.5 3.5L9 19"/>';
 ICO.chevL='<path d="M14.5 5.5 8 12l6.5 6.5"/>';
 ICO.chevR='<path d="M9.5 5.5 16 12l-6.5 6.5"/>';
@@ -687,7 +705,15 @@ function applyTheme(){var dark=!!(_mqDark&&_mqDark.matches);
   var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',dark?'#101418':'#F2F3EE');}
 if(_mqDark){if(_mqDark.addEventListener)_mqDark.addEventListener('change',applyTheme);else if(_mqDark.addListener)_mqDark.addListener(applyTheme);}
 try{localStorage.removeItem('trainingsapp.theme');}catch(e){}   /* alter Schlüssel des entfernten Schalters */
-function toast(m){undoFn=null;var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1800);}
+function toast(m){undoFn=null;var t=document.getElementById('toast');t.classList.remove('pr');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1800);}
+/* Bestleistung: goldener Stern mit Funken, ein Glanz läuft einmal durch, 4 s sichtbar statt 1,8 s.
+   Klasse neu setzen (mit Reflow), damit die Animation auch bei zwei Bestleistungen kurz hintereinander neu startet. */
+var PR_MS=4000;
+function prToast(m){undoFn=null;var t=document.getElementById('toast'),sp='';
+  for(var i=0;i<8;i++)sp+='<i style="--a:'+(i*45)+'deg"></i>';
+  t.classList.remove('pr','show');void t.offsetWidth;
+  t.innerHTML='<span class="tpr">'+ico('star')+sp+'</span>'+esc(m)+'<span class="tshine"></span>';
+  t.classList.add('pr','show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},PR_MS);}
 function closeOverlay(cb){
   var ov=document.querySelector('.overlay');
   if(!ov){cb();return;}
@@ -1096,7 +1122,7 @@ function refreshPR(w,ei,si){
   if(card){var any=e.sets.some(function(x){return isPRset(w,e,x);}),pill=card.querySelector('.pill.pr');
     if(any&&!pill){var g=card.querySelector('.grow');if(g)g.insertAdjacentHTML('beforeend',' <span class="pill pr just">PR</span>');}
     else if(!any&&pill)pill.remove();}
-  if(on&&!was&&tr)toast('Bestleistung: '+dk(st.w)+' × '+st.r);}
+  if(on&&!was&&tr)prToast('Bestleistung: '+dk(st.w)+' × '+st.r);}
 
 function volWeek(anchor){
   var ws=weekStart(anchor),we=addDays(ws,6),m={};
@@ -1154,7 +1180,7 @@ function ringSVG(n,tot){
 
 /* ---------- Undo ---------- */
 var undoFn=null;
-function toastUndo(msg,fn){undoFn=fn;var t=document.getElementById('toast');
+function toastUndo(msg,fn){undoFn=fn;var t=document.getElementById('toast');t.classList.remove('pr');
   t.innerHTML=esc(msg)+'<button data-undo="1">Rückgängig</button>';t.classList.add('show');
   clearTimeout(t._t);}
 /* Die Rückgängig-Meldung bleibt stehen bis zum nächsten Tipp außerhalb (V3). Capture-Phase: läuft vor allen anderen Klicks.
