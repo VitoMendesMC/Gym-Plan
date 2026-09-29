@@ -178,12 +178,13 @@ padding:.45rem .6rem;border-radius:var(--rs);margin:.4rem 0}
 .cue{font-size:var(--fs-sub);margin:.3rem 0;padding:.45rem .6rem;background:var(--soft);
 border-radius:var(--rs);color:var(--mute)}
 .cue b{color:var(--ink);font-weight:600}
-.sets{width:100%;border-collapse:separate;border-spacing:0 .25rem;margin:.55rem 0 .35rem}
+.sets{width:100%;border-collapse:separate;border-spacing:0 .25rem;margin:.55rem 0 .35rem;table-layout:fixed}
 .sets th{font-size:var(--fs-c2);color:var(--mute);font-weight:700;text-align:center;
 text-transform:uppercase;letter-spacing:.09em;padding:0 .3rem .1rem}
 .sets td{padding:0 .15rem;vertical-align:middle}
 .sets td.n{text-align:center;color:var(--mute);font-weight:700;font-size:var(--fs-sub)}
-.sets input{padding:.5rem .35rem;text-align:center;font-weight:600}
+.sets input{padding:.5rem .35rem;text-align:center;font-weight:600;
+transition:background var(--d-ui) ease,border-color var(--d-ui) ease,box-shadow .15s ease}
 .setrow.done td.n{color:var(--quad)}
 .setrow.done td input{background:var(--quadsoft);border-color:transparent}
 .notebox{font-size:var(--fs-sub);background:var(--soft);padding:.45rem .6rem;border-radius:var(--rs);
@@ -268,9 +269,8 @@ table.cmp tr:last-child td{border-bottom:none}
 margin:.5rem -.9rem;padding:.1rem .9rem;-webkit-overflow-scrolling:touch;
 -webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
 .chips::-webkit-scrollbar{display:none}
-.chips button{flex:none}
 .card .chips,.sheet .chips{margin-left:0;margin-right:0;padding-left:0;padding-right:0}
-.chips button{padding:.35rem .75rem;font-size:var(--fs-fn);font-weight:600;border-radius:2rem;background:var(--card)}
+.chips button{flex:none;padding:.35rem .75rem;font-size:var(--fs-fn);font-weight:600;border-radius:2rem;background:var(--card)}
 .chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 /* ============ Kalender ============ */
@@ -328,7 +328,7 @@ background:rgba(10,14,18,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:
 animation:fade var(--d-ui) var(--ease-out);
 transition:opacity var(--d-fast) var(--ease-out)}
 .overlay.closing{opacity:0}
-.sheet{background:var(--sheet);width:100%;max-width:44rem;max-height:min(92vh,calc(100vh - env(safe-area-inset-top,0px) - .75rem));
+.sheet{touch-action:none;background:var(--sheet);width:100%;max-width:44rem;max-height:min(92vh,calc(100vh - env(safe-area-inset-top,0px) - .75rem));
 border-radius:var(--rl) var(--rl) 0 0;padding:.5rem .9rem calc(.9rem + env(safe-area-inset-bottom));
 display:flex;flex-direction:column;box-shadow:0 -12px 40px rgba(0,0,0,.28);
 animation:sheetin var(--d-sheet) var(--ease-drawer);
@@ -340,10 +340,9 @@ transition:transform var(--d-fast) var(--ease-out)}
 .sheet>.pk-head button{justify-self:start}
 .sheet>.pk-head b{text-align:center;font-size:var(--fs-body);font-weight:600}
 /* Sheets per Wischen nach unten schließen (V6, Stufe 1): Griff und Kopf ziehen, Listen scrollen normal */
-.sheet{touch-action:none}
-.sheet .pk-list,.sheet .nx-body{touch-action:pan-y}
+.sheet .nx-body{touch-action:pan-y}
 .sheet .chips{touch-action:pan-x}
-.sheet .pk-list{overflow-y:auto;flex:1;margin-top:.5rem;-webkit-overflow-scrolling:touch}
+.sheet .pk-list{touch-action:pan-y;overflow-y:auto;flex:1;margin-top:.5rem;-webkit-overflow-scrolling:touch}
 @keyframes fade{from{opacity:0}}
 .pk-item{padding:.6rem .3rem;border-bottom:1px solid var(--line);cursor:pointer;
 display:flex;justify-content:space-between;gap:.5rem;align-items:center}
@@ -373,7 +372,7 @@ button:disabled{opacity:.4;pointer-events:none;box-shadow:none}
 background:var(--ink);color:var(--bg);font-size:var(--fs-sub);font-weight:600;box-shadow:var(--sh-lift);
 opacity:0;pointer-events:none;transform:translateX(-50%) translateY(10px) scale(.96);
 transition:opacity var(--d-ui) var(--ease-out),transform var(--d-ui) var(--ease-out)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1);pointer-events:auto}
 /* Bestleistung (selten, deshalb eine Belohnung). Über die 5 s Anzeige verteilt, damit man sie auch sieht,
    wenn der Blick erst beim Weitertippen hinwandert:
    0–0,9 s Meldung federt hoch · 0,25 s Stern dreht sich rein · 0,7 s erste Funken · 1,5 s Glanz · 2,6 s Stern pocht, zweite Funken.
@@ -404,18 +403,16 @@ animation:prshine 1200ms var(--ease-in-out) 1500ms}
 /* ============ Satzzeilen mit Haken ============ */
 /* Feste Spalten: Haken und Notiz 44 px (px statt rem, damit größere Schrift die Zeile nicht sprengt), 4 px Luft.
    kg, Wdh und RIR teilen sich den Rest. Die Breiten kommen aus der Kopfzeile (table-layout:fixed). */
-.sets{table-layout:fixed}
 .sets th.n,.sets td.n,.sets th.nt,.sets td.nt{width:48px;padding:0}
 .sets th.w{width:29%}
 .sets th.r{width:23%}
 .chk{width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;
-font-weight:700;font-size:var(--fs-sub);color:var(--mute);background:var(--bg);border:1px solid var(--line);border-radius:var(--rs)}
-.chk{transition:background var(--d-fast) ease,border-color var(--d-fast) ease,color var(--d-fast) ease,transform var(--d-fast) var(--ease-out)}
+font-weight:700;font-size:var(--fs-sub);color:var(--mute);background:var(--bg);border:1px solid var(--line);border-radius:var(--rs);
+transition:background var(--d-fast) ease,border-color var(--d-fast) ease,color var(--d-fast) ease,transform var(--d-fast) var(--ease-out)}
 .chk:active{transform:scale(.9);transition-duration:var(--d-press)}
 .setrow.done .chk{background:var(--quad);border-color:var(--quad);color:var(--bg);font-size:var(--fs-body)}
 .setrow.done .chk.just{animation:chkpop 220ms var(--ease-out)}
 @keyframes chkpop{0%{transform:scale(.88)}55%{transform:scale(1.1)}100%{transform:scale(1)}}
-.sets input{transition:background var(--d-ui) ease,border-color var(--d-ui) ease,box-shadow .15s ease}
 /* Vorwerte vom letzten Mal: lesbar grau und dünn, eingetragene Werte bleiben kräftig */
 .sets input::placeholder{font-weight:400}
 .setrow td.n{transition:color var(--d-fast) ease}
@@ -457,9 +454,8 @@ border:1px solid var(--cardline);box-shadow:var(--sh-lift);animation:restin var(
 transition:transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--ease-out)}
 @keyframes restin{from{opacity:0;transform:translateY(120%)}}
 .restbar.closing{transform:translateY(120%);opacity:0}
-.restbar b{transition:opacity var(--d-fast) ease}
 .restbar .rb-main{flex:1;min-width:0;cursor:pointer}
-.restbar b{font-family:var(--num);font-size:var(--fs-t1);font-weight:var(--fw-num);line-height:1;
+.restbar b{transition:opacity var(--d-fast) ease;font-family:var(--num);font-size:var(--fs-t1);font-weight:var(--fw-num);line-height:1;
 font-variant-numeric:tabular-nums;display:block}
 .rb-p{height:.3rem;border-radius:2rem;background:var(--soft);margin-top:.35rem;overflow:hidden}
 .rb-p i{display:block;height:100%;width:100%;background:var(--quad);border-radius:2rem;
@@ -580,7 +576,6 @@ background:none;border:0;box-shadow:none;color:var(--acc);font-size:var(--fs-bod
 /* ============ Backup-Hinweis, Undo ============ */
 .banner.warn{background:var(--accsoft);color:var(--acc);border-color:var(--acc)}
 .banner.warn::before{background:var(--acc);animation:none}
-.toast.show{pointer-events:auto}
 .toast button{background:transparent;border:1px solid rgba(128,128,128,.55);color:inherit;
 padding:.22rem .6rem;font-size:var(--fs-fn);font-weight:700;border-radius:2rem;margin-left:.5rem}
 
@@ -1375,7 +1370,7 @@ function renderWorkout(a,isActive){
   if(isActive&&a.kurz)h+='<p class="small mute">Nur Anker-Übungen, je 2 Sätze empfohlen. Zählt als volle Einheit.</p>';
   a.entries.forEach(function(e,ei){
     var x=ex(e.exId),sl=slotById(s,e.slotId);var planned=sl&&sl.exId===e.exId;
-    var perf=lastPerf(e.exId,e.uni,a.id);var hint=progHint(e,perf);var isQ=x.muscle==='Quads';
+    var perf=lastPerf(e.exId,e.uni,a.id);var hint=progHint(e,perf);
     var prBase=bestEver(e.exId,e.uni,a.id),hasPR=prBase>0&&e.sets.some(function(st){return isDone(st)&&e1(st)>prBase*1.001;});
     var allDone=e.sets.length>0&&e.sets.every(isDone);var role=ssRole(a,ei);
     h+='<div class="card entry'+(sl&&sl.anker?' anker':'')+(isActive&&allDone?' folded':'')+(role==='a'?' ssA':role==='b'?' ssB':'')+'" data-m="'+esc(x.muscle)+'" data-sum="'+esc(fmtSets(e.sets.filter(filled))||'erledigt')+'">';
