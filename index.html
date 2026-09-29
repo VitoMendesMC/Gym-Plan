@@ -48,6 +48,11 @@
 /* Safaris Formularleiste (Kapsel mit Pfeilen und Haken) schwebt ab iOS 26 über der Tastatur
    und zählt nicht zur gemeldeten Tastaturhöhe. Alles über der Tastatur hält diesen Abstand zusätzlich. */
 --kbacc:48px;
+/* Schwebende Tab-Leiste (N1): Höhe (Icon, Beschriftung, Innenabstand), Abstand zum unteren Rand
+   und Unterkante für alles, was darüber andockt (Pausenleiste wie der MiniPlayer in Musik) */
+--tab-h:calc(46px + min(.78rem,14.4px));
+--tab-b:max(10px,calc(env(safe-area-inset-bottom) - 10px));
+--dock:calc(var(--tab-b) + var(--tab-h) + 8px);
 }
 @media (prefers-color-scheme:dark){:root{
 --bg:#101418;--ink:#E7ECEA;--mute:#8F9AA2;--line:#282F35;--soft:#1B2126;--card:#181D22;
@@ -191,12 +196,16 @@ transition:background var(--d-ui) ease,border-color var(--d-ui) ease,box-shadow 
 margin:.35rem 0;white-space:pre-wrap;color:var(--mute)}
 
 /* ============ Navigation ============ */
-nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:10;display:flex;justify-content:space-around;
-background:var(--glass);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);
-border-top:1px solid var(--line);padding:.25rem .25rem max(.3rem,env(safe-area-inset-bottom))}
-nav.tabs button{flex:1;position:relative;background:none;border:none;box-shadow:none;color:var(--mute);
-font-size:var(--fs-c2);font-weight:700;letter-spacing:.03em;padding:.5rem .2rem .35rem;
-display:flex;flex-direction:column;align-items:center;gap:.18rem;border-radius:var(--rs)}
+/* Schwebende Kapsel wie in iOS 26 (N1). Aktiver Tab: gefülltes Icon auf einer hellen Pille (statt Strich oben)
+   Beschriftung wächst wie bei iOS nur bis 12 px mit, sonst passen „Kalender“ und „Übungen“ bei großer Schrift nicht in die Kapsel. */
+nav.tabs{position:fixed;left:16px;right:16px;bottom:var(--tab-b);height:var(--tab-h);max-width:30rem;margin:0 auto;
+z-index:10;display:flex;padding:4px;border-radius:999px;
+background:var(--glass);backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8);
+border:1px solid var(--cardline);box-shadow:var(--sh-lift)}
+nav.tabs button{flex:1;min-width:0;position:relative;background:none;border:none;box-shadow:none;color:var(--mute);
+font-size:min(var(--fs-c2),12px);font-weight:700;letter-spacing:.03em;line-height:1.2;padding:0 .1rem;
+display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:999px;
+transition:background-color var(--d-fast) ease,color var(--d-fast) ease}
 nav.tabs button svg{width:22px;height:22px;display:block}
 /* Linien-Icons (Block H): 24er-Raster, Strich 1,7, Farbe = Textfarbe */
 svg.i{width:1.15em;height:1.15em;display:inline-block;flex:none;vertical-align:-.2em}
@@ -206,16 +215,21 @@ button.icon.tiny svg.i{width:1rem;height:1rem;stroke-width:2}   /* Plan-Kopf: so
 .restbar b svg.i,.kb-t svg.i{width:.7em;height:.7em;vertical-align:0;margin-right:.2em}
 .chev-w svg.i{transition:transform var(--d-ui) var(--ease-out)}
 .chev-w.open svg.i{transform:rotate(90deg)}
-nav.tabs button.on{color:var(--ink)}
-nav.tabs button.on::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);
-width:1.7rem;height:2px;border-radius:0 0 2px 2px;background:var(--ink)}
+nav.tabs button.on{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
 .sticky{position:sticky;top:0;z-index:5;margin:calc(-.9rem - env(safe-area-inset-top,0px)) -.9rem .7rem;
 padding:calc(.65rem + env(safe-area-inset-top,0px)) .9rem .65rem;
-background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-border-bottom:1px solid var(--line)}
-
-#sbar{position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:9;pointer-events:none;
 background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+/* Weicher Übergang statt Trennlinie (N3): der Kopf läuft 1rem nach unten aus */
+.sticky::after{content:"";position:absolute;left:0;right:0;top:100%;height:1rem;pointer-events:none;
+background:linear-gradient(var(--glass),transparent)}
+
+/* Statusleiste: Milchglas, das nach unten weich ausläuft (N3), statt einer Fläche mit harter Kante */
+#sbar{position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px) + 1.25rem);z-index:9;pointer-events:none;
+background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+-webkit-mask-image:linear-gradient(#000 calc(100% - 1.25rem),transparent);mask-image:linear-gradient(#000 calc(100% - 1.25rem),transparent)}
+/* Unten: Inhalt blendet hinter der schwebenden Tab-Leiste weich aus (N3) */
+body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(var(--tab-b) + var(--tab-h) + 1.5rem);z-index:9;pointer-events:none;
+background:linear-gradient(transparent,color-mix(in srgb,var(--bg) 85%,transparent) 70%)}
 body.wk #sbar{display:none}
 
 /* ============ Home ============ */
@@ -368,7 +382,7 @@ body.kbd .nx-body{padding-bottom:var(--kb,0px)}
 button:disabled{opacity:.4;pointer-events:none;box-shadow:none}
 
 /* ============ Toast ============ */
-.toast{position:fixed;left:50%;bottom:5rem;z-index:30;padding:.6rem 1rem;border-radius:2rem;white-space:nowrap;max-width:calc(100vw - 1.5rem);overflow:hidden;text-overflow:ellipsis;
+.toast{position:fixed;left:50%;bottom:calc(var(--tab-b) + var(--tab-h) + 12px);z-index:30;padding:.6rem 1rem;border-radius:2rem;white-space:nowrap;max-width:calc(100vw - 1.5rem);overflow:hidden;text-overflow:ellipsis;
 background:var(--ink);color:var(--bg);font-size:var(--fs-sub);font-weight:600;box-shadow:var(--sh-lift);
 opacity:0;pointer-events:none;transform:translateX(-50%) translateY(10px) scale(.96);
 transition:opacity var(--d-ui) var(--ease-out),transform var(--d-ui) var(--ease-out)}
@@ -446,9 +460,10 @@ font-weight:600;color:var(--quad);font-variant-numeric:tabular-nums}
 background:var(--quad);-webkit-mask:var(--i-check) center/contain no-repeat;mask:var(--i-check) center/contain no-repeat}
 
 /* ============ Pausentimer ============ */
-.restbar{position:fixed;left:.6rem;right:.6rem;bottom:calc(3.7rem + env(safe-area-inset-bottom));
-z-index:15;max-width:43rem;margin:0 auto;display:flex;align-items:center;gap:.5rem;
-padding:.5rem .6rem;border-radius:var(--rm);background:var(--glass);color:var(--ink);
+/* Pausenleiste dockt als Kapsel über der Tab-Leiste an, gleich breit (N1, wie der MiniPlayer in Musik) */
+.restbar{position:fixed;left:16px;right:16px;bottom:var(--dock);
+z-index:15;max-width:30rem;margin:0 auto;display:flex;align-items:center;gap:.5rem;
+padding:.45rem .5rem;border-radius:999px;background:var(--glass);color:var(--ink);
 backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);
 border:1px solid var(--cardline);box-shadow:var(--sh-lift);animation:restin var(--d-sheet) var(--ease-drawer);
 transition:transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--ease-out)}
@@ -461,7 +476,7 @@ font-variant-numeric:tabular-nums;display:block}
 .rb-p i{display:block;height:100%;width:100%;background:var(--quad);border-radius:2rem;
 transform-origin:left;transform:scaleX(1);transition:transform 250ms linear}
 .rb-b{background:transparent;border:1px solid var(--line);color:inherit;
-padding:.4rem .55rem;font-size:var(--fs-fn);font-weight:700;border-radius:var(--rs)}
+padding:.4rem .6rem;font-size:var(--fs-fn);font-weight:700;border-radius:999px}
 .rb-b:active{background:var(--soft)}
 .rb-x{padding:.4rem .6rem}
 .restbar.over{background:var(--quad);color:var(--bg);border-color:transparent;cursor:pointer;
@@ -473,7 +488,7 @@ animation:fade var(--d-fast) var(--ease-out),overpulse 1.6s ease-in-out .4s 3}
 body.resting main{padding-bottom:11rem}
 /* Tastatur offen: Leiste sitzt direkt über der Tastatur statt dahinter (Wert kommt aus visualViewport) */
 body.kbd .restbar{bottom:calc(var(--kbo) + .5rem);transition:bottom var(--d-ui) var(--ease-out),transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--ease-out)}
-body.resting .toast{bottom:8.6rem}
+body.resting .toast{bottom:calc(var(--dock) + 4.2rem)}
 /* Tastatur offen: Meldungen über Tastatur und Leiste statt dahinter */
 body.kbd .toast{bottom:calc(var(--kbo) + .75rem)}
 body.kbd.kbon .toast,body.kbd.resting .toast{bottom:calc(var(--kbo) + 4.4rem)}
