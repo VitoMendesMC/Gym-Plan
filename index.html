@@ -31,9 +31,9 @@
 --bg:#F2F3EE;--ink:#151A1F;--mute:#5E6870;--line:#E0E3DC;--soft:#EAEDE6;--card:#FFFFFF;
 --sheet:#F2F3EE;--cardline:transparent;--seg:#FFFFFF;
 --glass:rgba(242,243,238,.82);
---quad:#12694A;--quadsoft:#DCEFE4;--acc:#AC5E16;--accsoft:#F8E6CE;--danger:#A63527;
+--quad:#12694A;--quadsoft:#DCEFE4;--acc:#9A5414;--accsoft:#F8E6CE;--danger:#A63527;   /* --acc vorher #AC5E16: Text auf --accsoft nur 3,9:1 (Block J) */
 --pr:#8F6508;--prsoft:#F7EBCD;--pron:#E3B547;   /* --pron: Gold auf der Meldung (Hintergrund --ink) */
---act:#AC5E16;
+--act:#9A5414;
 --m-quad:#12694A;--m-ham:#0E6C85;--m-add:#5E7A24;--m-glute:#8B3FA3;--m-back:#2B5BA8;--m-chest:#B23A2E;
 --m-sh:#9C6712;--m-tri:#6B54A3;--m-bi:#9C3A6B;--m-calf:#7A5636;--m-abs:#1C7A6C;--m-misc:#6A757D;
 --mc:var(--m-misc);
@@ -80,12 +80,14 @@ html{font-size:16px;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.45;
 -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;
 --kbo:calc(var(--kb,0px) + var(--kbacc))}   /* Oberkante der Formularleiste (--kb setzt kbSync am body) */
-main{max-width:44rem;margin:0 auto;padding:calc(.9rem + env(safe-area-inset-top,0px)) .9rem 7rem;
+main{container:main/inline-size;max-width:44rem;margin:0 auto;padding:calc(.9rem + env(safe-area-inset-top,0px)) .9rem 7rem;
 /* Mindestens 1px höher als der Bildschirm: kurze Seiten (Plan, Kalender) verhalten sich wie lange, Tab-Leiste bleibt ruhig */
 min-height:calc(100vh + 1px);min-height:calc(100lvh + 1px)}
 h1{font-family:var(--display);font-size:var(--fs-lt);font-weight:var(--fw-head);line-height:1.05;margin:.5rem 0 .9rem}
+h1,h2,.exname{hyphens:auto;overflow-wrap:break-word}
 h2{font-family:var(--display);font-size:var(--fs-t2);font-weight:var(--fw-head);line-height:1.15;margin:1.5rem 0 .5rem}
-h3{display:flex;align-items:center;gap:.45rem;font-size:var(--fs-c1);font-weight:700;text-transform:uppercase;
+/* Abschnittsüberschrift (wie ein iOS-Listenkopf). Semantisch h2, damit die Überschriften nicht von h1 auf h3 springen (VoiceOver). */
+h2.sec{line-height:inherit;display:flex;align-items:center;gap:.45rem;font-size:var(--fs-c1);font-weight:700;text-transform:uppercase;
 letter-spacing:.1em;color:var(--mute);margin:1.5rem 0 .45rem}
 p{margin:.4rem 0}
 .mute{color:var(--mute)}
@@ -95,7 +97,13 @@ p{margin:.4rem 0}
 .click{cursor:pointer}
 .click:active{opacity:.55}
 .mdot{width:.5rem;height:.5rem;border-radius:50%;background:var(--mc);display:inline-block;flex:none}
-summary{cursor:pointer;font-weight:600;font-size:var(--fs-sub);padding:.35rem 0;color:var(--mute)}
+summary{cursor:pointer;font-weight:600;font-size:var(--fs-sub);padding:.35rem 0;color:var(--mute);
+list-style:none;display:flex;align-items:center;gap:.3rem}
+/* Aufklapp-Pfeil als Masken-Icon statt Browser-Dreieck (Block J), dreht sich wie im Plan um 90° */
+summary::-webkit-details-marker{display:none}
+summary::before{content:"";width:1em;height:1em;flex:none;background:currentColor;
+-webkit-mask:var(--i-chev) center/contain no-repeat;mask:var(--i-chev) center/contain no-repeat;transition:transform var(--d-ui) var(--ease-out)}
+details[open]>summary::before{transform:rotate(90deg)}
 input[type=number],.hist-sets,.stats b,.cal-day,.sets td.n{font-variant-numeric:tabular-nums}
 /* Bewegung reduzieren: Bewegung aus, Überblendungen bleiben
    (accessibility.md › Cognitive: „Replacing transitions in x-, y-, and z-axes with fades") */
@@ -119,7 +127,7 @@ button{background:var(--card);border:1px solid var(--line);border-radius:var(--r
 padding:.55rem .85rem;cursor:pointer;line-height:1.2;font-weight:500;
 transition:transform var(--d-fast) var(--ease-out),background .15s ease,color .15s ease,border-color .15s ease}
 button:active{transform:scale(.97);transition-duration:var(--d-press)}
-button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600;box-shadow:var(--sh)}
+button.primary{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}   /* flach wie ein gefüllter iOS-Knopf (Block J) */
 button.acc{background:transparent;color:var(--acc);border-color:var(--acc);font-weight:600}
 button.acc.on{background:var(--acc);color:#fff;border-color:var(--acc)}
 button.danger{color:var(--danger);border-color:var(--line);background:transparent}
@@ -129,7 +137,8 @@ button.icon{width:2.4rem;height:2.4rem;padding:0;font-size:var(--fs-t3);font-wei
 display:inline-flex;align-items:center;justify-content:center}
 button.exbtn{width:100%;text-align:left;background:var(--bg);display:flex;
 justify-content:space-between;align-items:center;gap:.5rem;padding:.6rem .7rem}
-button.exbtn span.n{font-family:var(--display);font-size:var(--fs-t3);font-weight:var(--fw-head)}
+button.exbtn span.n{font-family:var(--display);font-size:var(--fs-t3);font-weight:var(--fw-head);min-width:0;hyphens:auto;overflow-wrap:anywhere}
+button.exbtn>span:last-child{flex:none}
 button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{
 outline:2px solid var(--acc);outline-offset:2px}
 
@@ -140,6 +149,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0
 input[type=number]{-moz-appearance:textfield}
 input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 input[type=checkbox]{width:auto;accent-color:var(--acc)}
+::placeholder{color:var(--mute);opacity:1}
+/* Browser-Flächen in App-Farben (Block J): Textcursor und Markierung orange statt Systemblau */
+input,textarea{caret-color:var(--acc)}
+::selection{background:var(--accsoft)}
+/* An/Aus wie in iOS (Block J): Text links, Schalter rechts. Safari zeigt input[switch] als echten iOS-Schalter,
+   andere Browser als Checkbox. */
+label.tgl{display:flex;align-items:center;justify-content:space-between;gap:.75rem;min-height:44px;font-size:var(--fs-body)}
+label.tgl input{flex:none;margin:0}
 textarea{min-height:2.7rem;resize:vertical}
 label.small:not(.row){display:block;color:var(--mute);font-size:var(--fs-c2);font-weight:700;
 text-transform:uppercase;letter-spacing:.08em;margin-bottom:.25rem}
@@ -226,7 +243,12 @@ letter-spacing:.09em;padding:.14rem .5rem;border-radius:2rem}
 /* ============ Plan ============ */
 .slot{border-bottom:1px solid var(--line);padding:.75rem 0}
 .slot>.row:first-child{flex-wrap:nowrap}
-.slot>.row:first-child .pill{flex:none;font-size:var(--fs-c2);padding:.18rem .45rem;letter-spacing:.03em}
+.sbtns>button,.slot>.row:first-child>button{flex:none;width:44px;height:44px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+/* Wird das Namensfeld zu schmal, rutschen die drei Knöpfe gemeinsam rechtsbündig in die nächste Zeile */
+.sess>.row>input{flex:1 1 5.5em}
+.sbtns{display:flex;gap:.5rem;margin-left:auto}
+/* Muskel- und Geräte-Pill dürfen bei großer Schrift kürzen, der Entfernen-Knopf bleibt sichtbar */
+.slot>.row:first-child .pill{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:var(--fs-c2);padding:.18rem .45rem;letter-spacing:.03em}
 .slot:last-of-type{border-bottom:none}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem}
@@ -252,7 +274,9 @@ margin:.5rem -.9rem;padding:.1rem .9rem;-webkit-overflow-scrolling:touch;
 .chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 /* ============ Kalender ============ */
-.stats.s4{grid-template-columns:repeat(4,1fr)}
+.stats.s4{grid-template-columns:repeat(2,1fr)}
+/* 4 nebeneinander nur, solange sie hineinpassen; bei den größten Textgrößen 2 × 2 (Block J) */
+@container main (min-width:16rem){.stats.s4{grid-template-columns:repeat(4,1fr)}}
 .stats.s4 b{font-size:var(--fs-t1)}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin:.7rem 0;
 font-size:var(--fs-c2);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
@@ -278,13 +302,13 @@ font-size:var(--fs-sub);font-weight:400;cursor:pointer;position:relative;transit
 .cal-day .dots i.g{background:var(--quad)}
 .cal-day .dots i.a{background:var(--act)}
 .cal-day .dots i.r{background:var(--mute)}
-.wk-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem}
+.wk-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.3rem}
 .wk-day{background:var(--card);border:1px solid var(--cardline);border-radius:var(--rm);
 padding:.45rem .35rem;min-height:5.2rem;font-size:var(--fs-c1);cursor:pointer;box-shadow:var(--sh)}
 .wk-day.gym{background:var(--quadsoft);border-color:var(--quad)}
 .wk-day.sel{border-color:var(--ink);border-width:1.5px}
 .wk-day b{display:block;font-size:var(--fs-c2);font-weight:700;text-transform:uppercase;
-letter-spacing:.01em;white-space:nowrap;color:var(--mute);margin-bottom:.25rem}
+letter-spacing:.01em;color:var(--mute);margin-bottom:.25rem}
 .wk-day.today b{color:var(--acc)}
 .wk-day .t{color:var(--quad);font-weight:600}
 .wk-day .a{color:var(--act)}
@@ -341,7 +365,7 @@ body.kbd .nx-body{padding-bottom:var(--kb,0px)}
 .chips.wrap{flex-wrap:wrap;overflow:visible;margin:0;padding:0;-webkit-mask-image:none;mask-image:none}
 .nx-step{display:flex;align-items:center;gap:.4rem}
 .nx-step b{flex:1;text-align:center;font-family:var(--num);font-size:var(--fs-t2);font-weight:var(--fw-num);font-variant-numeric:tabular-nums}
-.nx-uni{gap:.45rem;margin-top:.85rem}
+.nx-uni{margin-top:.85rem}
 button:disabled{opacity:.4;pointer-events:none;box-shadow:none}
 
 /* ============ Toast ============ */
@@ -393,7 +417,7 @@ font-weight:700;font-size:var(--fs-sub);color:var(--mute);background:var(--bg);b
 @keyframes chkpop{0%{transform:scale(.88)}55%{transform:scale(1.1)}100%{transform:scale(1)}}
 .sets input{transition:background var(--d-ui) ease,border-color var(--d-ui) ease,box-shadow .15s ease}
 /* Vorwerte vom letzten Mal: lesbar grau und dünn, eingetragene Werte bleiben kräftig */
-.sets input::placeholder{color:var(--mute);font-weight:400;opacity:1}
+.sets input::placeholder{font-weight:400}
 .setrow td.n{transition:color var(--d-fast) ease}
 .nb{width:44px;height:44px;margin-left:auto;padding:0;color:var(--mute);background:transparent;border-color:transparent;
 display:flex;align-items:center;justify-content:center}
@@ -429,7 +453,7 @@ background:var(--quad);-webkit-mask:var(--i-check) center/contain no-repeat;mask
 z-index:15;max-width:43rem;margin:0 auto;display:flex;align-items:center;gap:.5rem;
 padding:.5rem .6rem;border-radius:var(--rm);background:var(--glass);color:var(--ink);
 backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);
-border:1px solid var(--line);box-shadow:var(--sh-lift);animation:restin var(--d-sheet) var(--ease-drawer);
+border:1px solid var(--cardline);box-shadow:var(--sh-lift);animation:restin var(--d-sheet) var(--ease-drawer);
 transition:transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--ease-out)}
 @keyframes restin{from{opacity:0;transform:translateY(120%)}}
 .restbar.closing{transform:translateY(120%);opacity:0}
@@ -464,12 +488,12 @@ body.kbd.kbon .toast,body.kbd.resting .toast{bottom:calc(var(--kbo) + 4.4rem)}
 .kbbar{display:none;position:fixed;left:.6rem;right:.6rem;bottom:calc(var(--kbo) + .5rem);z-index:16;
 max-width:43rem;margin:0 auto;align-items:center;gap:6px;padding:6px;border-radius:var(--rm);
 background:var(--glass);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);
-border:1px solid var(--line);box-shadow:var(--sh-lift);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+border:1px solid var(--cardline);box-shadow:var(--sh-lift);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
 animation:kbin var(--d-fast) var(--ease-out);transition:bottom var(--d-ui) var(--ease-out)}
 @keyframes kbin{from{opacity:0;transform:translateY(8px)}}
 body.kbon .kbbar{display:flex}
 .kb-b{min-width:4.2rem;height:44px;padding:0 .8rem;font-size:var(--fs-body);font-weight:600;font-variant-numeric:tabular-nums;
-background:var(--card);border:1px solid var(--line);border-radius:var(--rs);box-shadow:var(--sh)}
+background:var(--card);border:1px solid var(--cardline);border-radius:var(--rs);box-shadow:var(--sh)}
 .kb-b.press{background:var(--acc);border-color:var(--acc);color:#fff;transform:scale(.96)}
 .kb-u{padding:0 .3rem;font-size:var(--fs-c2);font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
 .kb-t{display:none;margin-left:auto;height:44px;align-items:center;padding:0 .85rem;border-radius:2rem;white-space:nowrap;
@@ -859,7 +883,7 @@ function renderNewEx(){
   h+='<label class="small">Muskelgruppe</label>'+ch(MUSCLES,n.muscle,'nxm');
   h+='<label class="small">Gerät</label>'+ch(EQUIP,n.equip,'nxe');
   h+='<div class="grid2">'+stp(0,'Wdh von')+stp(1,'Wdh bis')+'</div>';
-  h+='<label class="row small nx-uni"><input type="checkbox" data-nxu="1"'+(n.uni?' checked':'')+'> einseitig möglich</label>';
+  h+='<label class="tgl nx-uni">einseitig möglich<input type="checkbox" switch data-nxu="1"'+(n.uni?' checked':'')+'></label>';
   h+='<p class="small mute" id="nx_hint">'+(miss.length?esc(miss.join(' und ')+(miss.length>1?' fehlen':' fehlt')+' noch'):'')+'</p>';
   return h+'</div></div></div>';}
 /* Gezielte Aktualisierung ohne Neuaufbau: Tastatur bleibt offen, Sheet springt nicht neu rein */
@@ -1403,7 +1427,7 @@ function renderPlan(){
   h+='<details><summary>Anderen Split laden</summary><p class="small mute">Ersetzt den aktuellen Plan komplett. Historie und Übungen bleiben.</p><div class="row"><select id="tplsel" class="grow">'+Object.keys(TEMPLATES).map(function(k){return '<option value="'+k+'">'+esc(TEMPLATES[k].name)+'</option>';}).join('')+'</select><button data-act="loadtpl">Laden</button></div></details></div>';
   S.sessions.forEach(function(s,si){
     var open=!!ui.planOpen[s.id];
-    h+='<div class="card sess'+(open?'':' closed')+'" data-dragitem="1" data-sid="'+s.id+'"><div class="row"><span class="drag" data-drag="sess" role="img" aria-label="Ziehen zum Sortieren">'+GRIP+'</span><input data-sname="'+s.id+'" value="'+esc(s.name)+'" style="font-weight:var(--fw-head);font-size:var(--fs-t3)" class="grow"><button class="icon tiny" data-ptog="'+s.id+'" aria-label="Übungen anzeigen" aria-expanded="'+open+'">'+ico('chevR','chev')+'</button><button class="icon tiny" data-sdup="'+s.id+'" aria-label="Einheit duplizieren"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button><button class="tiny danger" data-sdel="'+s.id+'" aria-label="Einheit aus dem Plan löschen">'+ico('x')+'</button></div>';
+    h+='<div class="card sess'+(open?'':' closed')+'" data-dragitem="1" data-sid="'+s.id+'"><div class="row"><span class="drag" data-drag="sess" role="img" aria-label="Ziehen zum Sortieren">'+GRIP+'</span><input data-sname="'+s.id+'" value="'+esc(s.name)+'" style="font-weight:var(--fw-head);font-size:var(--fs-t3)" class="grow"><span class="sbtns"><button class="icon tiny" data-ptog="'+s.id+'" aria-label="Übungen anzeigen" aria-expanded="'+open+'">'+ico('chevR','chev')+'</button><button class="icon tiny" data-sdup="'+s.id+'" aria-label="Einheit duplizieren"><svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button><button class="tiny danger" data-sdel="'+s.id+'" aria-label="Einheit aus dem Plan löschen">'+ico('x')+'</button></span></div>';
     h+='<div class="ssum small mute">'+s.slots.length+' Übungen'+(s.tag?' · '+esc(s.tag):'')+'</div>';
     h+='<div class="sbody"><input data-stag="'+s.id+'" value="'+esc(s.tag)+'" placeholder="Kurzbeschreibung" class="small" style="margin:.4rem 0">';
     s.slots.forEach(function(sl,i){
@@ -1504,11 +1528,11 @@ function renderExercises(){
     h+='<div class="grid2" style="margin-top:.5rem"><div><label class="small">Wdh-Ziel von</label><input type="number" inputmode="numeric" data-xf="rep0" value="'+x.reps[0]+'"></div><div><label class="small">Wdh-Ziel bis</label><input type="number" inputmode="numeric" data-xf="rep1" value="'+x.reps[1]+'"></div></div>';
     h+='<label class="small" style="margin-top:.5rem">Ziel / Rolle</label><input data-xf="goal" value="'+esc(x.goal||'')+'" placeholder="z. B. Quad-Hauptübung, schwer">';
     h+='<label class="small" style="margin-top:.5rem">Ausführung</label><textarea data-xf="cue">'+esc(x.cue||'')+'</textarea>';
-    h+='<label class="small" style="margin-top:.5rem">Deine Notiz (Sitzhöhe, Griff, Gerät…)</label><textarea data-xf="note">'+esc(x.note||'')+'</textarea>';
-    h+='<div class="row" style="margin-top:.5rem"><label class="row small" style="gap:.3rem"><input type="checkbox" data-xf="uniOk"'+(x.uniOk?' checked':'')+'> einseitig möglich</label><span class="grow"></span><button class="tiny danger" data-exdel="'+x.id+'">Übung löschen</button></div></div>';
+    h+='<label class="small" style="margin-top:.5rem">Deine Notiz</label><textarea data-xf="note" placeholder="Sitzhöhe, Griff, Gerät…">'+esc(x.note||'')+'</textarea>';
+    h+='<label class="tgl" style="margin-top:.5rem">einseitig möglich<input type="checkbox" switch data-xf="uniOk"'+(x.uniOk?' checked':'')+'></label><div class="row" style="justify-content:flex-end;margin-top:.5rem"><button class="tiny danger" data-exdel="'+x.id+'">Übung löschen</button></div></div>';
     var rows=[];S.workouts.forEach(function(w){w.entries.forEach(function(e){if(e.exId===x.id){var dn=e.sets.filter(filled);if(dn.length)rows.push({date:w.date,uni:e.uni,sets:dn,note:e.note});}});});
     rows.sort(function(a,b){return a.date<b.date?1:-1;});
-    h+='<h3>Verlauf</h3>';
+    h+='<h2 class="sec">Verlauf</h2>';
     if(rows.length){
       var asc=rows.slice().reverse(),base=pd(asc[0].date),pts=[],bst=null;
       asc.forEach(function(r){
@@ -1531,7 +1555,7 @@ function exTabListHTML(){
   var h='',q=(ui.exQ||'').toLowerCase();
   var list=exList().filter(function(e){return (!ui.exMuscle||e.muscle===ui.exMuscle)&&matchEquip(e,ui.exEquip)&&(!q||e.name.toLowerCase().indexOf(q)>=0);});
   var byM={};list.forEach(function(e){(byM[e.muscle]=byM[e.muscle]||[]).push(e);});
-  MUSCLES.forEach(function(m){if(!byM[m])return;h+='<h3 data-m="'+esc(m)+'"><i class="mdot"></i>'+m+'</h3><div class="card" data-m="'+esc(m)+'">';byM[m].forEach(function(e){var p=lastPerf(e.id,false)||lastPerf(e.id,true);h+='<div class="list-item click" data-exopen="'+e.id+'"><div class="row"><b class="grow">'+esc(e.name)+'</b><span class="pill">'+esc(e.equip)+'</span></div><div class="small mute">'+esc(e.goal||'')+(p?' · zuletzt '+fmtDate(p.date)+': '+esc(fmtSets(p.sets)):'')+'</div></div>';});h+='</div>';});
+  MUSCLES.forEach(function(m){if(!byM[m])return;h+='<h2 class="sec" data-m="'+esc(m)+'"><i class="mdot"></i>'+m+'</h2><div class="card" data-m="'+esc(m)+'">';byM[m].forEach(function(e){var p=lastPerf(e.id,false)||lastPerf(e.id,true);h+='<div class="list-item click" data-exopen="'+e.id+'"><div class="row"><b class="grow">'+esc(e.name)+'</b><span class="pill">'+esc(e.equip)+'</span></div><div class="small mute">'+esc(e.goal||'')+(p?' · zuletzt '+fmtDate(p.date)+': '+esc(fmtSets(p.sets)):'')+'</div></div>';});h+='</div>';});
   if(!list.length)h+='<p class="mute">Keine Übung passt zu den Filtern.</p>';
   return h;
 }
@@ -1549,7 +1573,7 @@ function bwChart(){
     +'<p class="small mute" style="margin-top:0">Punkte: Einzelwerte. Linie: 7-Tage-Schnitt.</p>';}
 function renderMore(){
   var h='<h1>Mehr</h1><div class="group">';
-  h+='<div class="card"><b>Pausentimer</b><p class="small mute">Startet automatisch, sobald du einen Satz abhakst. Die Länge merkt sich die App je Einheit, ±30 s direkt im Timer.</p><div class="chips">'+[60,90,120,150,180,240].map(function(v){return '<button data-act="restset" data-val="'+v+'" class="'+(restDur()===v?'on':'')+'">'+fmtT(v)+'</button>';}).join('')+'</div><label class="row small" style="gap:.45rem;margin-top:.3rem"><input type="checkbox" data-sound="1"'+(S.sound!==false?' checked':'')+'> Ton am Ende</label></div>';
+  h+='<div class="card"><b>Pausentimer</b><p class="small mute">Startet automatisch, sobald du einen Satz abhakst. Die Länge merkt sich die App je Einheit, ±30 s direkt im Timer.</p><div class="chips">'+[60,90,120,150,180,240].map(function(v){return '<button data-act="restset" data-val="'+v+'" class="'+(restDur()===v?'on':'')+'">'+fmtT(v)+'</button>';}).join('')+'</div><label class="tgl" style="margin-top:.3rem">Ton am Ende<input type="checkbox" switch data-sound="1"'+(S.sound!==false?' checked':'')+'></label></div>';
   h+='<div class="card"><b>Block</b><p class="small mute">Start des aktuellen 6-Wochen-Blocks. Bestimmt die RIR-Vorgabe auf der Startseite.</p><div class="row"><input type="date" id="blockstart" value="'+S.blockStart+'" class="grow"><button data-act="blocknow">Heute neu starten</button></div></div>';
   h+='<div class="card"><b>Backup</b><p class="small mute">Deine Daten liegen nur in diesem Browser. Einmal pro Woche exportieren.</p><div class="row"><button class="primary" data-act="export">Exportieren</button><button data-act="copyexp">In Zwischenablage</button><button data-act="csv">CSV für Excel</button></div><p class="small mute" style="margin:.5rem 0 0">'+(S.lastExport?'Letztes Backup: '+fmtDate(S.lastExport):'Noch kein Backup gemacht.')+'</p><textarea id="expbox" placeholder="Export erscheint hier" style="margin-top:.5rem;font-size:var(--fs-fn);min-height:4rem"></textarea></div>';
   h+='<div class="card"><b>Import</b><p class="small mute">Ersetzt alle aktuellen Daten.</p><input type="file" id="impfile" accept="application/json,.json"><textarea id="impbox" placeholder="…oder JSON hier einfügen" style="margin-top:.5rem;font-size:var(--fs-fn);min-height:4rem"></textarea><div class="row" style="margin-top:.5rem"><button data-act="import">Importieren</button></div></div>';
