@@ -45,6 +45,9 @@
 --ease-in-out:cubic-bezier(.77,0,.175,1);
 --ease-drawer:cubic-bezier(.32,.72,0,1);
 --d-press:120ms;--d-fast:180ms;--d-ui:240ms;--d-sheet:320ms;
+/* Safaris Formularleiste (Kapsel mit Pfeilen und Haken) schwebt ab iOS 26 über der Tastatur
+   und zählt nicht zur gemeldeten Tastaturhöhe. Alles über der Tastatur hält diesen Abstand zusätzlich. */
+--kbacc:48px;
 }
 @media (prefers-color-scheme:dark){:root{
 --bg:#101418;--ink:#E7ECEA;--mute:#8F9AA2;--line:#282F35;--soft:#1B2126;--card:#181D22;
@@ -75,7 +78,8 @@
 html{font-size:16px;-webkit-text-size-adjust:100%}
 @supports (font:-apple-system-body){html{font:-apple-system-body}}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.45;
--webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none;
+--kbo:calc(var(--kb,0px) + var(--kbacc))}   /* Oberkante der Formularleiste (--kb setzt kbSync am body) */
 main{max-width:44rem;margin:0 auto;padding:calc(.9rem + env(safe-area-inset-top,0px)) .9rem 7rem;
 /* Mindestens 1px höher als der Bildschirm: kurze Seiten (Plan, Kalender) verhalten sich wie lange, Tab-Leiste bleibt ruhig */
 min-height:calc(100vh + 1px);min-height:calc(100lvh + 1px)}
@@ -422,16 +426,16 @@ animation:fade var(--d-fast) var(--ease-out),overpulse 1.6s ease-in-out .4s 3}
 .restbar.over .rb-x{font-weight:700;opacity:.8;padding:.4rem .6rem}
 body.resting main{padding-bottom:11rem}
 /* Tastatur offen: Leiste sitzt direkt über der Tastatur statt dahinter (Wert kommt aus visualViewport) */
-body.kbd .restbar{bottom:calc(var(--kb,0px) + .5rem);transition:bottom var(--d-ui) var(--ease-out),transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--ease-out)}
+body.kbd .restbar{bottom:calc(var(--kbo) + .5rem);transition:bottom var(--d-ui) var(--ease-out),transform var(--d-fast) var(--ease-out),opacity var(--d-fast) var(--ease-out)}
 body.resting .toast{bottom:8.6rem}
 /* Tastatur offen: Meldungen über Tastatur und Leiste statt dahinter */
-body.kbd .toast{bottom:calc(var(--kb,0px) + .75rem)}
-body.kbd.kbon .toast,body.kbd.resting .toast{bottom:calc(var(--kb,0px) + 4.4rem)}
+body.kbd .toast{bottom:calc(var(--kbo) + .75rem)}
+body.kbd.kbon .toast,body.kbd.resting .toast{bottom:calc(var(--kbo) + 4.4rem)}
 
 /* ============ Stepper-Leiste über der Tastatur ============ */
-/* Nur bei offener Tastatur und Fokus in kg oder Wdh (body.kbon). Läuft eine Pause,
+/* Nur bei offener Tastatur und Fokus in kg, Wdh oder RIR (body.kbon). Läuft eine Pause,
    steht die Zeit rechts in der Leiste (body.kbstep) und die große Pausenleiste ist so lange ausgeblendet. */
-.kbbar{display:none;position:fixed;left:.6rem;right:.6rem;bottom:calc(var(--kb,0px) + .5rem);z-index:16;
+.kbbar{display:none;position:fixed;left:.6rem;right:.6rem;bottom:calc(var(--kbo) + .5rem);z-index:16;
 max-width:43rem;margin:0 auto;align-items:center;gap:6px;padding:6px;border-radius:var(--rm);
 background:var(--glass);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);
 border:1px solid var(--line);box-shadow:var(--sh-lift);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
@@ -750,6 +754,9 @@ function progHint(e,perf){
   var ok=perf.sets.every(function(s){return s.r!==''&&Number(s.r)>=e.repMax&&(s.rir===''||Number(s.rir)<=2);});
   return ok?'Alle Sätze oben im Bereich: Gewicht erhöhen (+2,5 kg Oberkörper, +5 kg Beine), zurück ans untere Ende.':'';
 }
+/* RIR-Vorgabe als Zahl für den Stepper (leeres RIR-Feld ohne Vorwert). Woche wie in weekInfo, aber zum Datum der Einheit.
+   Woche 1–2: 3, 3–4: 2, 5: 1, Deload und danach: 3 */
+function rirGoal(date){var wk=Math.floor(Math.floor((pd(date)-pd(S.blockStart))/864e5)/7)+1;return wk>=3&&wk<=4?2:wk===5?1:3;}
 function weekInfo(){
   var d=Math.floor((pd(today())-pd(S.blockStart))/864e5);var wk=Math.floor(d/7)+1;
   var rir=wk<=2?'3 RIR':wk<=4?'2 RIR':wk===5?'1 RIR':wk===6?'Deload: halbe Sätze, 3–4 RIR, kein optionaler Tag':'Block ist rum. Neuen Block starten und Rotationsübungen tauschen.';
@@ -855,7 +862,8 @@ function syncRow(w,ei,si){
   if(btn){btn.innerHTML=dn?ico('check'):(si+1);btn.setAttribute('aria-label','Satz '+(si+1)+(dn?' erledigt':' abhaken'));var tr=btn.parentNode.parentNode;
     if(tr){var wasDn=tr.classList.contains('done');tr.classList.toggle('done',dn);if(dn&&!wasDn)btn.classList.add('just');if(!dn)btn.classList.remove('just');}}
   var wi=document.querySelector('input[data-set="'+ei+'.'+si+'.w"]');if(wi&&wi.value!==st.w)wi.value=st.w;
-  var ri=document.querySelector('input[data-set="'+ei+'.'+si+'.r"]');if(ri&&ri.value!==st.r)ri.value=st.r;}
+  var ri=document.querySelector('input[data-set="'+ei+'.'+si+'.r"]');if(ri&&ri.value!==st.r)ri.value=st.r;
+  var qi=document.querySelector('input[data-set="'+ei+'.'+si+'.rir"]');if(qi&&qi.value!==st.rir)qi.value=st.rir;}
 function foldCard(w,ei,force){
   var card=document.querySelectorAll('.card.entry')[ei];if(!card)return false;
   var was=card.classList.contains('folded');
@@ -923,11 +931,12 @@ function stepVal(w,key){
   var e=w.entries[ei],st=e.sets[si],cur=Number(st[f]);
   if(st[f]===''||isNaN(cur)){
     var perf=lastPerf(e.exId,e.uni,w.id),ph=perf&&perf.sets[si];
-    cur=ph&&ph[f]!==''?Number(ph[f]):(f==='r'?e.repMin:dl);
+    cur=ph&&ph[f]!==''?Number(ph[f]):(f==='r'?e.repMin:f==='rir'?rirGoal(w.date):dl);
     if(isNaN(cur))cur=0;
   }else cur=cur+dl;
   cur=f==='w'?Math.round(cur*4)/4:Math.round(cur);
   if(cur<0)cur=0;
+  if(f==='rir'&&cur>10)cur=10;
   st[f]=String(cur);
   /* Schritte zählen wie Tippen (E-1): nie sofort abhaken, ausgewertet wird erst beim Verlassen der Zeile */
   _dirty[ei+'.'+si]={w:w,e:e,st:st};
@@ -997,19 +1006,21 @@ if(window.visualViewport){var _kbRaf=0;var kbQ=function(){cancelAnimationFrame(_
   window.visualViewport.addEventListener('resize',kbQ);window.visualViewport.addEventListener('scroll',kbQ);}
 
 /* ---------- Stepper-Leiste über der Tastatur (#kbbar) ---------- */
-/* Sichtbar nur bei offener Tastatur und Fokus in kg oder Wdh, im laufenden Training und beim Bearbeiten im Kalender.
+/* Sichtbar nur bei offener Tastatur und Fokus in kg, Wdh oder RIR, im laufenden Training und beim Bearbeiten im Kalender.
    Die Knöpfe tragen data-stp mit dem Zeilenschlüssel, damit rowKey() sie zur Zeile zählt. */
 var kbKey=null,_kbRv=0;
+/* Feld -> [Schritt, Beschriftung, Einheit, Wort fürs aria-label] */
+var KB_F={w:['2.5','2,5','kg','kg'],r:['1','1','Wdh','Wiederholung'],rir:['1','1','RIR','RIR']};
 function kbTrack(){
   var bar=document.getElementById('kbbar'),ae=document.activeElement;
   if(!bar||bar.contains(ae))return;
   var a=ae&&ae.dataset&&ae.dataset.set?ae.dataset.set.split('.'):null;
-  var k=(a&&(a[2]==='w'||a[2]==='r')&&wctx())?a[0]+'|'+a[1]+'|'+a[2]:null;
+  var k=(a&&KB_F[a[2]]&&wctx())?a[0]+'|'+a[1]+'|'+a[2]:null;
   if(k!==kbKey){kbKey=k;
-    if(k){var kg=a[2]==='w',s=kg?'2.5':'1',lb=kg?'2,5':'1',b=bar.querySelectorAll('.kb-b');
-      b[0].setAttribute('data-stp',k+'|-'+s);b[0].textContent='−'+lb;b[0].setAttribute('aria-label',kg?'2,5 kg weniger':'1 Wiederholung weniger');
-      b[1].setAttribute('data-stp',k+'|'+s);b[1].textContent='+'+lb;b[1].setAttribute('aria-label',kg?'2,5 kg mehr':'1 Wiederholung mehr');
-      document.getElementById('kb_u').textContent=kg?'kg':'Wdh';
+    if(k){var f=KB_F[a[2]],b=bar.querySelectorAll('.kb-b');
+      b[0].setAttribute('data-stp',k+'|-'+f[0]);b[0].textContent='−'+f[1];b[0].setAttribute('aria-label',f[1]+' '+f[3]+' weniger');
+      b[1].setAttribute('data-stp',k+'|'+f[0]);b[1].textContent='+'+f[1];b[1].setAttribute('aria-label',f[1]+' '+f[3]+' mehr');
+      document.getElementById('kb_u').textContent=f[2];
       if(document.body.classList.contains('kbon'))kbRevealSoon();}}
   kbSyncBar();}
 function kbSyncBar(){
