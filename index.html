@@ -350,22 +350,24 @@ background:var(--ink);color:var(--bg);font-size:var(--fs-sub);font-weight:600;bo
 opacity:0;pointer-events:none;transform:translateX(-50%) translateY(10px) scale(.96);
 transition:opacity var(--d-ui) var(--ease-out),transform var(--d-ui) var(--ease-out)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
-/* Bestleistung (selten, deshalb eine Belohnung): Meldung federt hoch, Stern dreht sich rein, 8 Funken, ein Glanz.
+/* Bestleistung (selten, deshalb eine Belohnung): Meldung federt hoch, Stern dreht sich rein, 10 Funken, ein Glanz.
    Nur transform/opacity. Ohne Animation (Bewegung reduzieren) bleiben Funken und Glanz unsichtbar, der Stern steht still. */
 .toast.pr{overflow:visible;padding-left:.75rem}
-.toast.pr.show{animation:prtoast 560ms var(--ease-out)}
+.toast.pr.show{animation:prtoast 760ms var(--ease-out)}
 @keyframes prtoast{0%{opacity:0;transform:translateX(-50%) translateY(14px) scale(.9)}
 55%{opacity:1;transform:translateX(-50%) translateY(-2px) scale(1.04)}100%{transform:translateX(-50%) translateY(0) scale(1)}}
 .tpr{position:relative;display:inline-block;margin-right:.45rem;color:var(--pron);vertical-align:-.2em}
-.tpr svg.i{width:1.25em;height:1.25em;vertical-align:0;display:block;animation:prstar 620ms var(--ease-out) 80ms both}
+.tpr svg.i{width:1.25em;height:1.25em;vertical-align:0;display:block;animation:prstar 800ms var(--ease-out) 140ms both}
 @keyframes prstar{0%{opacity:0;transform:scale(.4) rotate(-45deg)}50%{opacity:1;transform:scale(1.25) rotate(8deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
-.tpr i{position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--pron);opacity:0;
-animation:prspark 640ms var(--ease-out) 180ms}
-@keyframes prspark{0%{opacity:1;transform:rotate(var(--a)) translateY(-6px) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateY(-22px) scale(.3)}}
+/* Funken fliegen größtenteils über die Seite: Farbe --pr (Kontrast zum Seitenhintergrund), Ring in --pron (Kontrast auf der Meldung) */
+.tpr i{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;opacity:0;
+background:var(--pr);box-shadow:0 0 0 1.5px var(--pron);animation:prspark 900ms var(--ease-out) 300ms}
+@keyframes prspark{0%{opacity:0;transform:rotate(var(--a)) translateY(-8px) scale(.6)}
+15%{opacity:1}60%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateY(var(--d)) scale(.4)}}
 .tshine{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
 .tshine::after{content:"";position:absolute;top:0;bottom:0;left:0;width:45%;opacity:0;
 background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--pron) 45%,transparent),transparent);
-animation:prshine 700ms var(--ease-in-out) 420ms}
+animation:prshine 900ms var(--ease-in-out) 640ms}
 @keyframes prshine{0%{opacity:1;transform:translateX(-110%)}100%{opacity:1;transform:translateX(240%)}}
 
 /* ============ Satzzeilen mit Haken ============ */
@@ -706,11 +708,11 @@ function applyTheme(){var dark=!!(_mqDark&&_mqDark.matches);
 if(_mqDark){if(_mqDark.addEventListener)_mqDark.addEventListener('change',applyTheme);else if(_mqDark.addListener)_mqDark.addListener(applyTheme);}
 try{localStorage.removeItem('trainingsapp.theme');}catch(e){}   /* alter Schlüssel des entfernten Schalters */
 function toast(m){undoFn=null;var t=document.getElementById('toast');t.classList.remove('pr');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1800);}
-/* Bestleistung: goldener Stern mit Funken, ein Glanz läuft einmal durch, 4 s sichtbar statt 1,8 s.
+/* Bestleistung: goldener Stern mit 10 Funken, ein Glanz läuft einmal durch, 4 s sichtbar statt 1,8 s.
    Klasse neu setzen (mit Reflow), damit die Animation auch bei zwei Bestleistungen kurz hintereinander neu startet. */
 var PR_MS=4000;
 function prToast(m){undoFn=null;var t=document.getElementById('toast'),sp='';
-  for(var i=0;i<8;i++)sp+='<i style="--a:'+(i*45)+'deg"></i>';
+  for(var i=0;i<10;i++)sp+='<i style="--a:'+(i*36)+'deg;--d:'+(i%2?-26:-36)+'px"></i>';
   t.classList.remove('pr','show');void t.offsetWidth;
   t.innerHTML='<span class="tpr">'+ico('star')+sp+'</span>'+esc(m)+'<span class="tshine"></span>';
   t.classList.add('pr','show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},PR_MS);}
