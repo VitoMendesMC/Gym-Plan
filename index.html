@@ -1811,7 +1811,8 @@ document.addEventListener('click',function(ev){
   if(d.act==='loadtpl'){var k=document.getElementById('tplsel').value;if(!TEMPLATES[k])return;if(confirm('Aktuellen Plan durch "'+TEMPLATES[k].name+'" ersetzen?')){S.sessions=TEMPLATES[k].build();S.planName=TEMPLATES[k].name;S.nextIdx=0;save();render();toast('Plan geladen');}return;}
   /* Mehr */
   if(d.act==='restset'){setRestDur(+d.val);render();toast('Pause '+fmtT(+d.val));return;}
-  if(d.act==='blocknow'){S.blockStart=today();save();render();toast('Block gestartet');return;}
+  if(d.act==='blocknow'){var bs0=S.blockStart;S.blockStart=today();save();render();
+    if(bs0!==S.blockStart)toastUndo('Block ab heute gestartet',function(){S.blockStart=bs0;});else toast('Block läuft bereits ab heute');return;}
   if(d.act==='export'){doExport();return;}
   if(d.act==='csv'){doCSV();return;}
   if(d.act==='copyexp'){S.lastExport=today();save();render();var json=JSON.stringify(S);var box=document.getElementById('expbox');box.value=json;box.select();try{navigator.clipboard.writeText(json).then(function(){toast('Kopiert');});}catch(e){document.execCommand('copy');toast('Kopiert');}return;}
@@ -1857,6 +1858,8 @@ document.addEventListener('input',function(ev){
 });
 window.addEventListener('beforeunload',save);
 applyTheme();load();render();loadRest();
+/* Offline-Start (Block N): sw.js im selben Ordner merkt sich die zuletzt geladene Fassung. Fehlt die Datei, läuft die App wie bisher. */
+try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}
 })();
 </script>
 </body>
