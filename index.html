@@ -635,6 +635,22 @@ padding:.22rem .6rem;font-size:var(--fs-fn);font-weight:700;border-radius:2rem;m
 
 body.kurz .entry:not(.anker){display:none}
 
+/* ============ Drops (Block W3) ============ */
+.noterow .nrw{display:flex;gap:.4rem;align-items:center}
+.noterow .nrw input{flex:1;min-width:0}
+.noterow .nrw .tiny{flex:none}
+.sets tr.droprow td{padding:0 0 .2rem}
+.dropline{display:block;width:100%;min-height:0;text-align:left;background:transparent;border:0;box-shadow:none;padding:.1rem .35rem;color:var(--mute);
+font-size:var(--fs-sub);font-weight:600;font-variant-numeric:tabular-nums;position:relative;white-space:normal}
+.dropline::after{content:"";position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}
+.dlab{display:flex;width:44px;height:44px;align-items:center;justify-content:center;color:var(--mute);font-size:var(--fs-fn);font-weight:700}
+.setrow.drop td input{font-weight:500}
+.setrow.drop.done td input{background:var(--soft);border-color:transparent}
+/* Tastatur offen: Sheet über Tastatur und Stepper-Leiste heben, Leiste über das Sheet legen */
+body.kbd .sheet.dropsh{padding-bottom:calc(var(--kbo) + .9rem)}
+body.kbd.kbon .sheet.dropsh{padding-bottom:calc(var(--kbo) + 4.4rem)}
+body.dropon .kbbar{z-index:21}
+
 /* ============ Aufwärmsätze (Block W2) ============ */
 /* Leiser als Arbeitssätze: runder Haken, erledigt grau statt grün, keine eigene Farbe */
 .wu-line{display:flex;align-items:center;gap:.6rem;margin:.55rem 0 .1rem;min-height:44px}
@@ -844,7 +860,7 @@ function refreshPicker(){
   var l=document.getElementById('pk_list');if(l)l.innerHTML=pickerListHTML();syncPressed();}
 
 var S=null, view='home';
-var ui={wuOpen:{},newEx:null,planOpen:{},editId:null,finish:false,exDetail:null,exMuscle:'',exEquip:'',picker:null,cal:{mode:'month',anchor:today(),sel:today()},openW:null};
+var ui={drop:null,wuOpen:{},newEx:null,planOpen:{},editId:null,finish:false,exDetail:null,exMuscle:'',exEquip:'',picker:null,cal:{mode:'month',anchor:today(),sel:today()},openW:null};
 
 function fresh(){return {version:DATA_VERSION,exercises:seedExercises(),sessions:TEMPLATES.ganz.build(),workouts:[],activities:[],bodyweight:[],active:null,nextIdx:0,blockStart:today(),planName:TEMPLATES.ganz.name,rest:120,restBySession:{},sound:true};}
 function migrate(){
@@ -900,7 +916,9 @@ function lastPerf(exId,uni,excludeId){
   return null;
 }
 function dk(v){return String(v).replace('.',',');}
-function fmtSets(sets){return sets.map(function(s){return (s.w===''?'–':dk(s.w))+'×'+(s.r===''?'–':s.r);}).join(', ');}
+function fmtSets(sets){return sets.map(function(s){return (s.w===''?'–':dk(s.w))+'×'+(s.r===''?'–':s.r)+fmtDrops(s);}).join(', ');}
+/* Drops hinter ihrem Satz: „105×6 ↘85×6 ↘68×5“ (W3) */
+function fmtDrops(s){return (s.drops||[]).filter(filled).map(function(d){return ' ↘'+(d.w===''?'–':dk(d.w))+'×'+(d.r===''?'–':d.r);}).join('');}
 function progHint(e,perf){
   if(!perf||!perf.sets.length)return '';
   var ok=perf.sets.every(function(s){return s.r!==''&&Number(s.r)>=e.repMax&&(s.rir===''||Number(s.rir)<=2);});
@@ -1054,6 +1072,17 @@ function wuCalc(work,repMin,equip,o){
     out.push({w:w,r:s[1]});});
   return out;
 }
+/* Drop-Vorschlag (W3): etwa −20 % vom vorigen Gewicht, auf das Raster des Geräts; unterstützt umgekehrt (+20 % Hilfe).
+   Liegt das gerundete Gewicht nicht unter dem vorigen, eine Stufe weiter runter. Unter der Stange oder bei Körpergewicht: kein Vorschlag. */
+function dropCalc(prev,equip,o){
+  o=o||{};prev=Number(prev);var g=o.plates?{step:2.5}:wuGrid(equip);
+  if(!g||!(prev>0))return null;
+  if(o.assist){var a=wuRound(prev*1.2,g),t=prev*1.2;while(a<=prev){t+=0.5;a=wuRound(t,g);}return a;}
+  var t2=prev*0.8,v=wuRound(t2,g);
+  while(v>=prev&&t2>0){t2-=0.5;v=wuRound(t2,g);}
+  if(!(v>0)||v>=prev||(g.bar&&v<g.bar))return null;
+  return v;
+}
 /* wu-calc:end */
 
 function isDone(st){return st.done==null?(st.w!==''&&st.r!==''):!!st.done;}
@@ -1061,6 +1090,9 @@ function isDone(st){return st.done==null?(st.w!==''&&st.r!==''):!!st.done;}
 /* Satz-Schlüssel: "ei.si" = Arbeitssatz si, "ei.wN" = Aufwärmsatz N. Aufwärmsätze liegen in entry.wu, getrennt von den Arbeitssätzen:
    Vorwerte, Bestleistung, Fortschritt, Volumen und Zuklappen sehen sie nicht. */
 function setRef(w,k){var p=String(k).split('.'),ei=+p[0],e=w&&w.entries[ei];if(!e||p[1]==null)return null;
+  /* Drop (W3): "ei.dSI-J" = Drop J nach Arbeitssatz SI */
+  if(p[1].charAt(0)==='d'){var q=p[1].slice(1).split('-'),ps=e.sets[+q[0]],dj=+q[1],ds=ps&&ps.drops&&ps.drops[dj];
+    return ds?{e:e,ei:ei,i:dj,si:+q[0],st:ds,drop:true,k:ei+'.d'+(+q[0])+'-'+dj}:null;}
   var wu=p[1].charAt(0)==='w',i=+(wu?p[1].slice(1):p[1]),st=(wu?(e.wu||[]):e.sets)[i];
   return st?{e:e,ei:ei,i:i,st:st,wu:wu,k:ei+'.'+(wu?'w':'')+i}:null;}
 function wuSet(){return {w:'',r:'',note:'',done:false};}
@@ -1103,6 +1135,62 @@ function wuAll(w,ei){var e=w.entries[ei];if(!e.wu||!e.wu.length)return;
   if(miss){ui.wuOpen[w.id+'|'+ei]=true;render();toast('Kein Vorschlag – bitte Gewicht selbst eintragen',3000);return;}
   e.wu.forEach(function(st,i){if(isDone(st))return;if(!filled(st)){st.w=String(sg.rows[i].w);st.r=String(sg.rows[i].r);}st.done=true;});
   save();render();wuAfter(w,ei);}
+/* ---------- Drops (W3) ---------- */
+/* Drops hängen am Arbeitssatz (set.drops). Eingetragen wird im Sheet „Drops nach Satz N“; Abbrechen stellt den alten Stand her.
+   Pause: „+ Drop“ hält die laufende Pause an (es geht ohne Pause weiter). „Fertig“ mit neuem Drop startet sie neu,
+   sonst läuft die alte weiter. Drops zählen nur fürs kg-Volumen, nicht für Sätze, Bestleistung, Fortschritt oder Zuklappen. */
+function dropSet(){return {w:'',r:'',done:false};}
+function dropSugg(w,ei,si,j){var e=w.entries[ei],x=ex(e.exId),p=e.sets[si],b=Number(p.w)||0,s=null;
+  for(var k=0;k<=j;k++){s=b>0?dropCalc(b,x.equip,{assist:x.assist,plates:x.plates}):null;if(k===j)break;
+    var dd=p.drops&&p.drops[k];b=dd&&Number(dd.w)>0?Number(dd.w):(s||0);}
+  return s;}
+function dropFilled(st){return (st.drops||[]).filter(filled).length;}
+function restSnap(){return {end:rest.end,dur:rest.dur,paused:rest.paused,over:rest.over};}
+function restBack(o){if(!o)return;rest.end=o.end;rest.dur=o.dur;rest.paused=o.paused;rest.over=o.over;persistRest();
+  if(rest.end||rest.paused||rest.over)tickRest();else drawRest();}
+function dropOpen(w,ei,si,add){
+  var k=ei+'.'+si;if(_dirty[k])leaveRow(k);   /* erst den Satz fertig auswerten (Haken, Pause, Zuklappen) */
+  var st=w.entries[ei].sets[si],live=!!(S.active&&w===S.active);
+  ui.drop={ei:ei,si:si,snap:st.drops?JSON.parse(JSON.stringify(st.drops)):null,rest:null,n0:dropFilled(st)};
+  if(add){if(!st.drops)st.drops=[];st.drops.push(dropSet());
+    if(live){ui.drop.rest=restSnap();stopRest();}}
+  save();render();
+  /* direkt im Tipp fokussieren, sonst öffnet iOS die Tastatur nicht */
+  if(add){var i=document.querySelector('input[data-set="'+ei+'.d'+si+'-'+(st.drops.length-1)+'.w"]');if(i){try{i.focus({preventScroll:true});}catch(x){i.focus();}}}}
+function dropCur(){var w=wctx(),u=ui.drop;return w&&u?{w:w,st:w.entries[u.ei].sets[u.si]}:null;}
+function dropChanged(){var c=dropCur();if(!c)return false;var a=(c.st.drops||[]).filter(filled);
+  return JSON.stringify(a.map(function(d){return [d.w,d.r];}))!==JSON.stringify((ui.drop.snap||[]).filter(filled).map(function(d){return [d.w,d.r];}));}
+function dropClose(fn){Object.keys(_dirty).forEach(function(k){if(k.indexOf('.d')>0)delete _dirty[k];});
+  closeOverlay(function(){ui.drop=null;if(fn)fn();save();render();});}
+function dropDone(){var c=dropCur();if(!c)return;var st=c.st,u=ui.drop,w=c.w;
+  if(st.drops){st.drops=st.drops.filter(filled);st.drops.forEach(function(d){d.done=true;});if(!st.drops.length)delete st.drops;}
+  var live=!!(S.active&&w===S.active);
+  if(live&&dropFilled(st)>u.n0&&isDone(st)){if(ssRole(w,u.ei)==='a')restBack(u.rest);else{audioCtx();wakeOn();startRest();}}
+  else restBack(u.rest);
+  dropClose();}
+function dropCancel(){var c=dropCur();if(c){var u=ui.drop;if(u.snap)c.st.drops=u.snap;else delete c.st.drops;restBack(u.rest);}dropClose();}
+function dropClear(){var c=dropCur();if(!c)return;var st=c.st,u=ui.drop,old=u.snap;delete st.drops;restBack(u.rest);
+  dropClose(function(){if(old&&old.some(filled))toastUndo('Drops entfernt',function(){st.drops=old;});});}
+function dropBody(){var c=dropCur();if(!c)return '';var u=ui.drop,w=c.w,e=w.entries[u.ei],st=c.st,x=ex(e.exId),live=!!(S.active&&w===S.active);
+  var h='<p class="small mute" style="margin-top:0">'+esc(x.name)+' · Satz '+(u.si+1)+': '+(filled(st)?esc(dk(st.w))+' × '+esc(st.r):'noch leer')+(live?' · ohne Pause weiter':'')+'</p>';
+  h+='<table class="sets"><thead><tr><th class="n"></th><th class="w">kg</th><th class="r">Wdh</th><th class="rir"></th><th class="nt"></th></tr></thead><tbody>';
+  (st.drops||[]).forEach(function(d,j){var k=u.ei+'.d'+u.si+'-'+j,sg=dropSugg(w,u.ei,u.si,j);
+    h+='<tr class="setrow drop'+(filled(d)?' done':'')+'"><td class="n"><span class="dlab">'+(j+1)+'</span></td>'
+      +'<td class="w"><input type="number" step="0.5" inputmode="decimal" data-set="'+k+'.w" value="'+esc(d.w)+'" placeholder="'+(sg?esc(String(sg)):'')+'"></td>'
+      +'<td class="r"><input type="number" inputmode="numeric" data-set="'+k+'.r" value="'+esc(d.r)+'" placeholder=""></td><td class="rir"></td>'
+      +'<td class="nt"><button class="xb" data-dropdel="'+j+'" aria-label="Drop '+(j+1)+' entfernen">'+ico('x')+'</button></td></tr>';});
+  h+='</tbody></table><div class="row"><button class="tiny" data-dropplus="1">+ '+(st.drops&&st.drops.length?'weiterer ':'')+'Drop</button><span class="grow"></span>'
+    +(dropCalc(100,x.equip,{assist:x.assist,plates:x.plates})?'<span class="small mute">Vorschlag: '+(x.assist?'+20 % Hilfe':'−20 %')+'</span>':'')+'</div>';
+  if(u.snap&&u.snap.some(filled))h+='<div class="row" style="margin-top:1.2rem"><button class="danger grow" data-dropclear="1">Drops entfernen</button></div>';
+  return h;}
+function renderDrop(){var u=ui.drop;
+  return '<div class="overlay" data-dropbg="1"><div class="sheet dropsh" data-stop="1" role="dialog" aria-label="Drops"><div class="pk-head"><button class="tiny" data-dropcancel="1">Abbrechen</button><b>Drops nach Satz '+(u.si+1)+'</b><button class="tiny primary" data-dropdone="1">Fertig</button></div>'
+    +'<div class="sum-body" id="drop_body">'+dropBody()+'</div></div></div>';}
+/* Sheet-Inhalt neu, ohne das Sheet neu einfahren zu lassen */
+function dropRefresh(focusLast){var b=document.getElementById('drop_body');if(!b)return;b.innerHTML=dropBody();
+  if(focusLast){var c=dropCur(),n=c&&c.st.drops?c.st.drops.length-1:-1;if(n>=0){var i=b.querySelector('input[data-set="'+ui.drop.ei+'.d'+ui.drop.si+'-'+n+'.w"]');if(i)i.focus();}}}
+/* Gewicht eines Drops geändert: Vorschläge der folgenden Drops neu (ohne Neuaufbau, Tastatur bleibt) */
+function dropPh(w,ei,si){var st=w.entries[ei].sets[si];(st.drops||[]).forEach(function(d,j){var q=document.querySelector('input[data-set="'+ei+'.d'+si+'-'+j+'.w"]'),sg=dropSugg(w,ei,si,j);if(q)q.placeholder=sg?String(sg):'';});}
 function progOf(w){var d=0,t=0,s=w.kurz?sessionById(w.sessionId):null;
   w.entries.forEach(function(e){if(s){var sl=slotById(s,e.slotId);if(!(sl&&sl.anker))return;}   /* Kurzversion: ausgeblendete Übungen zählen nicht (M5) */
     e.sets.forEach(function(st){t++;if(isDone(st))d++;});});return {d:d,t:t};}
@@ -1170,7 +1258,7 @@ var _dirty={},_auto=null;
 function rowKey(el){if(!el||!el.dataset)return null;var d=el.dataset;
   if(d.set){var a=d.set.split('.');return a[0]+'.'+a[1];}
   if(d.stp){var b=d.stp.split('|');return b[0]+'.'+b[1];}
-  return d.done||d.noteopen||null;}
+  return d.done||d.noteopen||d.dropadd||null;}
 function leaveRow(k){
   var o=_dirty[k];if(!o)return;delete _dirty[k];
   var w=o.w;if(w!==S.active&&S.workouts.indexOf(w)<0)return;
@@ -1182,6 +1270,9 @@ function leaveRow(k){
     if(both&&!dn){st.done=true;var ae0=document.activeElement;_auto=(!ae0||ae0===document.body)?{k:wk,t:Date.now()}:null;save();syncRow(w,ei,wk);wuAfter(w,ei);return;}
     if(!both&&dn)st.done=false;
     save();syncRow(w,ei,wk);return;}
+  /* Drop (W3): nur erledigt/offen nach Inhalt, ohne Pause, Bestleistung, Fortschritt und Zuklappen */
+  if(si<0&&ei>=0){var dkey=null;o.e.sets.forEach(function(p,pi){var j=(p.drops||[]).indexOf(o.st);if(j>=0)dkey=ei+'.d'+pi+'-'+j;});
+    if(dkey){st.done=both;save();syncRow(w,ei,dkey);return;}}
   if(si<0)return;
   if(both&&!dn){st.done=true;
     /* Sperre gegen Doppel-Auslösen nur, wenn der Fokus ins Leere ging (iPhone: Tipp auf den Haken) */
@@ -1198,6 +1289,8 @@ function stepVal(w,key){
   var e=ref.e,st=ref.st,cur=Number(st[f]);
   if(st[f]===''||isNaN(cur)){
     if(ref.wu){var sr=wuSugg(w,ei).rows[si];cur=sr?Number(sr[f]):(f==='r'?5:dl);}   /* Aufwärmsatz: leeres Feld übernimmt den Vorschlag */
+    else if(ref.drop){var pa=e.sets[ref.si],pd=si>0?pa.drops[si-1]:pa;   /* Drop: kg = Vorschlag, Wdh = vom Satz davor */
+      cur=f==='w'?(dropSugg(w,ei,ref.si,si)||dl):(pd.r!==''?Number(pd.r):e.repMin);}
     else{var perf=lastPerf(e.exId,e.uni,w.id),ph=perf&&perf.sets[si];
       cur=ph&&ph[f]!==''?Number(ph[f]):(f==='r'?e.repMin:f==='rir'?rirGoal(w.date):dl);}
     if(isNaN(cur))cur=0;
@@ -1209,7 +1302,7 @@ function stepVal(w,key){
   st[f]=String(cur);
   /* Schritte zählen wie Tippen (E-1): nie sofort abhaken, ausgewertet wird erst beim Verlassen der Zeile */
   _dirty[ref.k]={w:w,e:e,st:st};
-  syncRow(w,ei,ref.k);if(ref.wu)saveLazy();else{refreshPR(w,ei,si);if(f==='w')wuPh(w,ei);saveLazy();}}
+  syncRow(w,ei,ref.k);if(ref.wu)saveLazy();else if(ref.drop){if(f==='w')dropPh(w,ei,ref.si);saveLazy();}else{refreshPR(w,ei,si);if(f==='w')wuPh(w,ei);saveLazy();}}
 function toggleNoteRow(key){
   var tr=document.querySelector('tr[data-nr="'+key+'"]');if(!tr)return;
   var on=tr.classList.toggle('on');
@@ -1531,7 +1624,8 @@ function renderNow(){
     var bn=backupNote();if(bn&&(view==='home'||view==='more'))h+='<div class="banner warn" data-tab="more">'+esc(bn)+' – jetzt exportieren</div>';
     if(view==='home')h+=renderHome();else if(view==='plan')h+=renderPlan();else if(view==='cal')h+=renderCal();else if(view==='ex')h+=renderExercises();else h+=renderMore();
   }
-  if(ui.newEx)h+=renderNewEx();else if(ui.picker)h+=renderPicker();else if(ui.sum)h+=renderSum();
+  if(ui.newEx)h+=renderNewEx();else if(ui.picker)h+=renderPicker();else if(ui.sum)h+=renderSum();else if(ui.drop&&wctx())h+=renderDrop();
+  document.body.classList.toggle('dropon',!!ui.drop);
   app.innerHTML=h;
   app.classList.toggle('entered',_entered);
   document.body.classList.toggle('wk',!!app.querySelector('.sticky'));
@@ -1638,7 +1732,8 @@ function renderWorkout(a,isActive){
       h+='<td class="r"><input type="number" inputmode="numeric" data-set="'+ei+'.'+si+'.r" value="'+esc(st.r)+'" placeholder="'+(ph?esc(ph.r):'')+'"></td>';
       h+='<td class="rir"><input type="number" inputmode="numeric" data-set="'+ei+'.'+si+'.rir" value="'+esc(st.rir)+'" placeholder="'+(ph&&ph.rir!==''?esc(ph.rir):'')+'"></td>';
       h+='<td class="nt"><button class="nb'+(st.note?' has':'')+'" data-noteopen="'+ei+'.'+si+'" aria-label="Notiz zu Satz '+(si+1)+'"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4.2L19 9.2a2.1 2.1 0 0 0-3-3L5.2 17z"/></svg></button></td></tr>';
-      h+='<tr class="noterow'+(st.note?' on':'')+'" data-nr="'+ei+'.'+si+'"><td></td><td colspan="4"><input type="text" data-set="'+ei+'.'+si+'.note" value="'+esc(st.note)+'" placeholder="Notiz zum Satz"></td></tr>';
+      h+='<tr class="noterow'+(st.note?' on':'')+'" data-nr="'+ei+'.'+si+'"><td></td><td colspan="4"><div class="nrw"><input type="text" data-set="'+ei+'.'+si+'.note" value="'+esc(st.note)+'" placeholder="Notiz zum Satz"><button class="tiny" data-dropadd="'+ei+'.'+si+'">+ Drop</button></div></td></tr>';
+      if(dropFilled(st))h+='<tr class="droprow"><td></td><td colspan="4"><button class="dropline" data-dropopen="'+ei+'.'+si+'" aria-label="Drops nach Satz '+(si+1)+' bearbeiten">↘ Drop '+esc(st.drops.filter(filled).map(function(d){return dk(d.w)+' × '+d.r;}).join(' · '))+'</button></td></tr>';
     });
     h+='</tbody></table><div class="row"><button class="icon" data-setminus="'+ei+'" aria-label="Satz entfernen">−</button><button class="icon" data-setplus="'+ei+'" aria-label="Satz hinzufügen">+</button><span class="mute small">Sätze</span>';
     if(perf)h+='<span class="grow"></span><button class="tiny" data-copy="'+ei+'">Letzte Werte übernehmen</button>';
@@ -1840,7 +1935,8 @@ function finishSave(){
 }
 /* ---------- Zusammenfassung nach dem Speichern (Block O) ---------- */
 /* Volumen je Übung (erledigte Sätze, kg × Wdh.); Vergleich nur über Übungen, die in beiden Einheiten vorkommen */
-function volBy(w){var m={};w.entries.forEach(function(e){var k=e.exId+'|'+(e.uni?1:0);e.sets.forEach(function(st){if(isDone(st)){m[k]=(m[k]||0)+Number(st.w||0)*Number(st.r||0);}});});return m;}
+function volBy(w){var m={};w.entries.forEach(function(e){var k=e.exId+'|'+(e.uni?1:0);e.sets.forEach(function(st){if(isDone(st)){m[k]=(m[k]||0)+Number(st.w||0)*Number(st.r||0);
+  (st.drops||[]).forEach(function(d){if(isDone(d))m[k]+=Number(d.w||0)*Number(d.r||0);});}});});return m;}   /* Drops zählen mit (W3) */
 function sumV(m){var v=0;Object.keys(m).forEach(function(k){v+=m[k];});return v;}
 function buildSum(a){
   var sets=0,prs=[];
@@ -1907,7 +2003,7 @@ window.addEventListener('popstate',function(){if(!_exHist)return;_exHist=false;i
 /* Ziehen am Griff oder am Kopf: Das Sheet folgt dem Finger. Loslassen nach mehr als 30 % der Höhe oder nach einem schnellen
    Wisch schließt (bei hohen Sheets reichen 180 px), sonst federt es zurück. „Neue Übung" mit Eingaben schließt nicht, es federt mit Widerstand zurück. */
 var sdrag=null,_sdEnd=0;
-function sheetLocked(){var n=ui.newEx;return !!(n&&(n.name.trim()||n.goal.trim()||n.cue.trim()));}
+function sheetLocked(){var n=ui.newEx;return !!(n&&(n.name.trim()||n.goal.trim()||n.cue.trim()))||!!(ui.drop&&dropChanged());}
 document.addEventListener('pointerdown',function(ev){
   var sh=ev.target.closest&&ev.target.closest('.sheet');if(!sh||sdrag||document.querySelector('.overlay.closing'))return;
   var grip=ev.target===sh&&ev.clientY-sh.getBoundingClientRect().top<32;
@@ -1927,7 +2023,7 @@ function sheetDragEnd(ev){
   var dy=g.y-g.y0,v=ev.timeStamp-g.t>100?0:g.v,h=g.sh.offsetHeight;
   var close=!sheetLocked()&&dy>0&&(dy>Math.min(h*.3,180)||(v>.5&&dy>20));   /* 30 % der Höhe, bei hohen Sheets höchstens 180 px */
   if(close){g.sh.style.transition='';g.sh.style.transform='';   /* .overlay.closing .sheet fährt ab der aktuellen Position raus */
-    if(ui.newEx)nxCancel();else if(ui.picker)closeOverlay(function(){ui.picker=null;render();});else if(ui.sum)sumClose();}
+    if(ui.newEx)nxCancel();else if(ui.picker)closeOverlay(function(){ui.picker=null;render();});else if(ui.sum)sumClose();else if(ui.drop)dropCancel();}
   else{g.sh.style.transition='transform var(--d-sheet) var(--ease-drawer)';g.sh.style.transform='';
     setTimeout(function(){g.sh.style.transition='';},400);}}
 document.addEventListener('pointerup',sheetDragEnd);
@@ -1936,7 +2032,7 @@ document.addEventListener('pointercancel',sheetDragEnd);
 document.addEventListener('click',function(ev){if(Date.now()-_sdEnd<350){ev.stopPropagation();ev.preventDefault();}},true);
 
 document.addEventListener('click',function(ev){
-  var el=ev.target.closest('[data-tab],[data-start],[data-sumclose],[data-sumcal],[data-act],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-del],[data-panker],[data-puni],[data-addslot],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-noteopen],[data-fold],[data-undo],[data-wuall],[data-wufold],[data-wuadd],[data-wuplus],[data-wunone],[data-wudel],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
+  var el=ev.target.closest('[data-tab],[data-start],[data-sumclose],[data-sumcal],[data-act],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-del],[data-panker],[data-puni],[data-addslot],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-noteopen],[data-fold],[data-undo],[data-wuall],[data-wufold],[data-wuadd],[data-wuplus],[data-wunone],[data-wudel],[data-dropadd],[data-dropopen],[data-dropdel],[data-dropplus],[data-dropclear],[data-dropdone],[data-dropcancel],[data-dropbg],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
   if(!el)return;var d=el.dataset,parts;
   if(d.undo){var uf=undoFn;undoFn=null;document.getElementById('toast').classList.remove('show');
     if(uf){uf();save();render();toast('Wiederhergestellt');}return;}
@@ -1963,6 +2059,20 @@ document.addEventListener('click',function(ev){
     if(d.sumclose){sumClose();return;}
     return;
   }
+  /* Drops (W3) */
+  if(ui.drop){
+    if(document.querySelector('.overlay.closing'))return;
+    var dc=dropCur();if(!dc){ui.drop=null;render();return;}
+    if(d.dropdone){dropDone();return;}
+    if(d.dropcancel){dropCancel();return;}
+    if(d.dropclear){dropClear();return;}
+    if(d.dropplus){if(!dc.st.drops)dc.st.drops=[];dc.st.drops.push(dropSet());save();dropRefresh(true);return;}
+    if(d.dropdel!==undefined){dc.st.drops.splice(+d.dropdel,1);save();dropRefresh();return;}
+    if(d.stop)return;
+    /* Tipp auf den Hintergrund schließt nur, solange nichts geändert ist */
+    if(d.dropbg&&!dropChanged()){dropCancel();return;}
+    return;
+  }
   /* Picker */
   if(ui.picker){
     if(document.querySelector('.overlay.closing'))return;
@@ -1985,6 +2095,8 @@ document.addEventListener('click',function(ev){
   if(wq){
     if(d.done!==undefined){toggleDone(wq,d.done);return;}
     if(d.noteopen!==undefined){toggleNoteRow(d.noteopen);return;}
+    if(d.dropadd!==undefined){var dap=d.dropadd.split('.');dropOpen(wq,+dap[0],+dap[1],true);return;}
+    if(d.dropopen!==undefined){var dop=d.dropopen.split('.');dropOpen(wq,+dop[0],+dop[1],false);return;}
     if(d.fold!==undefined){var fc=document.querySelectorAll('.card.entry')[+d.fold];
       foldCard(wq,+d.fold,!(fc&&fc.classList.contains('folded')));return;}
   }
@@ -2105,7 +2217,7 @@ document.addEventListener('input',function(ev){
   if(w){
     if(d.set){parts=d.set.split('.');var sref=setRef(w,parts[0]+'.'+parts[1]);if(!sref)return;var st=sref.st;st[parts[2]]=t.value;
       if(parts[2]==='note'){var nb=document.querySelector('button[data-noteopen="'+parts[0]+'.'+parts[1]+'"]');if(nb)nb.classList.toggle('has',t.value!=='');}
-      else{_dirty[sref.k]={w:w,e:sref.e,st:st};if(!sref.wu&&parts[2]==='w')wuPh(w,sref.ei);}
+      else{_dirty[sref.k]={w:w,e:sref.e,st:st};if(sref.drop){if(parts[2]==='w')dropPh(w,sref.ei,sref.si);}else if(!sref.wu&&parts[2]==='w')wuPh(w,sref.ei);}
       saveLazy();return;}
     if(d.enote!==undefined){w.entries[+d.enote].note=t.value;saveLazy();return;}
     if(d.wnote){w.note=t.value;saveLazy();return;}
