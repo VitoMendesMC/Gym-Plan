@@ -1766,7 +1766,8 @@ function renderPlan(){
       h+='<button class="exbtn" data-pickplan="'+s.id+'.'+i+'" style="margin:.35rem 0"><span class="n">'+esc(x.name)+'</span><span class="mute small">tauschen '+ico('chevR')+'</span></button>';
       if(x.goal)h+='<p class="small mute" style="margin:0 0 .3rem">'+esc(x.goal)+'</p>';
       h+='<div class="grid3"><div><label class="small">Sätze</label><input type="number" inputmode="numeric" data-pf="'+s.id+'.'+i+'.sets" value="'+sl.sets+'"></div><div><label class="small">Wdh von</label><input type="number" inputmode="numeric" data-pf="'+s.id+'.'+i+'.repMin" value="'+sl.repMin+'"></div><div><label class="small">Wdh bis</label><input type="number" inputmode="numeric" data-pf="'+s.id+'.'+i+'.repMax" value="'+sl.repMax+'"></div></div>';
-      h+='<div class="row" style="margin-top:.4rem">'+tickChip('panker',s.id+'.'+i,sl.anker,'Anker')+(x.uniOk?uniSeg('puni',s.id+'.'+i,sl.uni):'')+(i<s.slots.length-1?tickChip('pss',s.id+'.'+i,sl.ss,'Supersatz'):'')+'</div>';
+      /* Aufwärmen je Übung (W4): gilt ab der nächsten Einheit, im Training jederzeit per „+ Aufwärmen“ / „Heute ohne“ änderbar */
+      h+='<div class="row" style="margin-top:.4rem">'+tickChip('panker',s.id+'.'+i,sl.anker,'Anker')+tickChip('pwu',s.id+'.'+i,!!sl.wu,'Aufwärmen')+(x.uniOk?uniSeg('puni',s.id+'.'+i,sl.uni):'')+(i<s.slots.length-1?tickChip('pss',s.id+'.'+i,sl.ss,'Supersatz'):'')+'</div>';
       h+='<div class="rots"><span class="lbl">Rotation</span>'+(sl.alt||[]).map(function(aid){var ax=ex(aid);return '<span class="rot"><button data-rot="'+s.id+'.'+i+'.'+esc(aid)+'" title="Jetzt in den Plan tauschen">'+esc(ax.name)+' '+ico('swap')+'</button><button data-rotdel="'+s.id+'.'+i+'.'+esc(aid)+'" aria-label="'+esc(ax.name)+' aus der Rotation entfernen">'+ico('x')+'</button></span>';}).join('')+'<button class="tiny" data-addalt="'+s.id+'.'+i+'">+ Alternative</button></div>';
       h+='<textarea data-pnote="'+s.id+'.'+i+'" placeholder="Plan-Hinweis nur für diese Einheit (Rotation, Reihenfolge…)" style="margin-top:.4rem">'+esc(sl.note)+'</textarea></div>';
     });
@@ -2032,7 +2033,7 @@ document.addEventListener('pointercancel',sheetDragEnd);
 document.addEventListener('click',function(ev){if(Date.now()-_sdEnd<350){ev.stopPropagation();ev.preventDefault();}},true);
 
 document.addEventListener('click',function(ev){
-  var el=ev.target.closest('[data-tab],[data-start],[data-sumclose],[data-sumcal],[data-act],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-del],[data-panker],[data-puni],[data-addslot],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-noteopen],[data-fold],[data-undo],[data-wuall],[data-wufold],[data-wuadd],[data-wuplus],[data-wunone],[data-wudel],[data-dropadd],[data-dropopen],[data-dropdel],[data-dropplus],[data-dropclear],[data-dropdone],[data-dropcancel],[data-dropbg],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
+  var el=ev.target.closest('[data-tab],[data-start],[data-sumclose],[data-sumcal],[data-act],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-del],[data-panker],[data-pwu],[data-puni],[data-addslot],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-noteopen],[data-fold],[data-undo],[data-wuall],[data-wufold],[data-wuadd],[data-wuplus],[data-wunone],[data-wudel],[data-dropadd],[data-dropopen],[data-dropdel],[data-dropplus],[data-dropclear],[data-dropdone],[data-dropcancel],[data-dropbg],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
   if(!el)return;var d=el.dataset,parts;
   if(d.undo){var uf=undoFn;undoFn=null;document.getElementById('toast').classList.remove('show');
     if(uf){uf();save();render();toast('Wiederhergestellt');}return;}
@@ -2170,6 +2171,7 @@ document.addEventListener('click',function(ev){
   if(d.ptog){ui.planOpen[d.ptog]=!ui.planOpen[d.ptog];render();return;}
   if(d.sdup){var so=sessionById(d.sdup);if(!so)return;var cp=JSON.parse(JSON.stringify(so));cp.id=uid();cp.name=so.name+' (Kopie)';
     cp.slots.forEach(function(q){q.id=uid();});var pos=S.sessions.indexOf(so);S.sessions.splice(pos+1,0,cp);save();render();toast('Einheit dupliziert');return;}
+  if(d.pwu){parts=d.pwu.split('.');var slw=sessionById(parts[0]).slots[+parts[1]];slw.wu=!slw.wu;save();render();return;}
   if(d.pss){parts=d.pss.split('.');var sl9=sessionById(parts[0]).slots[+parts[1]];sl9.ss=!sl9.ss;save();render();return;}
   if(d.addalt){parts=d.addalt.split('.');var slA=sessionById(parts[0]).slots[+parts[1]];openPicker({mode:'addalt',sid:parts[0],idx:+parts[1],muscle:slA.muscle},slA.muscle);return;}
   if(d.rot){parts=d.rot.split('.');var slR=sessionById(parts[0]).slots[+parts[1]],nid=parts.slice(2).join('.'),xr=ex(nid),oldId=slR.exId;
