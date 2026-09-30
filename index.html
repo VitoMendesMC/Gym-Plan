@@ -635,6 +635,28 @@ padding:.22rem .6rem;font-size:var(--fs-fn);font-weight:700;border-radius:2rem;m
 
 body.kurz .entry:not(.anker){display:none}
 
+/* ============ Aufwärmsätze (Block W2) ============ */
+/* Leiser als Arbeitssätze: runder Haken, erledigt grau statt grün, keine eigene Farbe */
+.wu-line{display:flex;align-items:center;gap:.6rem;margin:.55rem 0 .1rem;min-height:44px}
+.wu-line .chk,.setrow.wu .chk{border-radius:50%;background:transparent}
+.wu-line .chk{flex:none}
+.wu-line.done .chk,.setrow.wu.done .chk{background:var(--soft);border-color:var(--soft);color:var(--mute)}
+.wu-line .t{flex:1;min-width:0;line-height:1.25}
+.wu-line .t b{display:block;font-size:var(--fs-sub);font-weight:600}
+.wu-line .t b span{font-weight:500;color:var(--mute)}
+.wu-line .t>span{display:block;font-size:var(--fs-sub);color:var(--mute);font-variant-numeric:tabular-nums}
+.wu-line.done .t b{color:var(--mute)}
+.wu-line .more,.sets .grp .more{width:44px;height:44px;flex:none;padding:0;border:0;background:transparent;box-shadow:none;color:var(--mute);display:flex;align-items:center;justify-content:center}
+.sets .grp .more{height:32px;margin-left:auto}
+svg.wuchev{transform:rotate(90deg)}
+.setrow.wu td input{background:transparent;font-weight:500}
+.setrow.wu.done td input{background:var(--soft);border-color:transparent}
+.sets tr.grp td{vertical-align:bottom;font-size:var(--fs-c2);font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--mute);padding:.35rem .3rem .05rem}
+.sets tr.grp td span{font-weight:500;text-transform:none;letter-spacing:0}
+.sets tr.grp td.nt{padding:0;vertical-align:bottom}
+.sets tr.wu-act td{padding:.1rem 0 .3rem}
+.xb{width:44px;height:44px;padding:0;color:var(--mute);background:transparent;border-color:transparent;box-shadow:none;display:flex;align-items:center;justify-content:center;margin-left:auto}
+
 /* ============ Tab-Wechsel (View Transitions API, Progressive Enhancement) ============ */
 nav.tabs{view-transition-name:tabs}
 #rest{view-transition-name:rest}
@@ -728,6 +750,7 @@ function seedExercises(){
   ];
   var o={};L.forEach(function(e){o[e.id]=e;e.assist=false;});
   o.pullup_a.assist=true;   /* unterstützt: mehr Gewicht = mehr Hilfe = leichter (Warm-up-Rechner rechnet umgekehrt) */
+  L.forEach(function(e){e.plates=false;});o.hack.plates=true;o.legpress.plates=true;   /* mit Scheiben beladen statt Steckgewicht (W2) */
   return o;
 }
 var SEED=seedExercises();
@@ -821,15 +844,15 @@ function refreshPicker(){
   var l=document.getElementById('pk_list');if(l)l.innerHTML=pickerListHTML();syncPressed();}
 
 var S=null, view='home';
-var ui={newEx:null,planOpen:{},editId:null,finish:false,exDetail:null,exMuscle:'',exEquip:'',picker:null,cal:{mode:'month',anchor:today(),sel:today()},openW:null};
+var ui={wuOpen:{},newEx:null,planOpen:{},editId:null,finish:false,exDetail:null,exMuscle:'',exEquip:'',picker:null,cal:{mode:'month',anchor:today(),sel:today()},openW:null};
 
 function fresh(){return {version:DATA_VERSION,exercises:seedExercises(),sessions:TEMPLATES.ganz.build(),workouts:[],activities:[],bodyweight:[],active:null,nextIdx:0,blockStart:today(),planName:TEMPLATES.ganz.name,rest:120,restBySession:{},sound:true};}
 function migrate(){
   var v0=S.version||1;
   Object.keys(SEED_ADDED).forEach(function(k){if(v0<+k)SEED_ADDED[k].forEach(function(id){
     if(!S.exercises[id]&&SEED[id])S.exercises[id]=JSON.parse(JSON.stringify(SEED[id]));});});
-  Object.keys(SEED).forEach(function(k){var e=S.exercises[k];if(e){['equip','reps','goal','cue','assist'].forEach(function(f){if(e[f]==null)e[f]=SEED[k][f];});}});
-  Object.keys(S.exercises).forEach(function(k){var e=S.exercises[k];if(!e.equip)e.equip='Sonstiges';if(!e.reps)e.reps=[8,12];if(e.goal==null)e.goal='';if(e.cue==null)e.cue='';if(e.note==null)e.note='';if(e.assist==null)e.assist=false;});
+  Object.keys(SEED).forEach(function(k){var e=S.exercises[k];if(e){['equip','reps','goal','cue','assist','plates'].forEach(function(f){if(e[f]==null)e[f]=SEED[k][f];});}});
+  Object.keys(S.exercises).forEach(function(k){var e=S.exercises[k];if(!e.equip)e.equip='Sonstiges';if(!e.reps)e.reps=[8,12];if(e.goal==null)e.goal='';if(e.cue==null)e.cue='';if(e.note==null)e.note='';if(e.assist==null)e.assist=false;if(e.plates==null)e.plates=false;});
   /* v4: Aufwärmen je Plan-Übung. Nur ergänzen, wo es fehlt; eine eigene Wahl bleibt (auch nach Rückweg auf eine ältere Version) */
   S.sessions.forEach(function(s){s.slots.forEach(function(sl){if(sl.wu==null)sl.wu=wuDefault(sl);});});
   if(!S.activities)S.activities=[];if(!S.planName)S.planName='Eigener Plan';
@@ -989,7 +1012,8 @@ var LB=0.45359237;
 /* Gewichtsraster je Gerät: welche Gewichte sich wirklich einstellen lassen
    Langhantel: 20-kg-Stange, 2,5-kg-Schritte · Kurzhantel: 1–10 kg in 1-kg-, danach 2-kg-Schritten
    Maschine: Matrix-Steckgewicht, 10 lb je Platte (Feinsteller 2,5/5/7,5 lb fürs Aufwärmen nicht nötig)
-   Kabel: Matrix-Kabelturm, 5 lb je Platte · Körpergewicht: kein Rechner */
+   Kabel: Matrix-Kabelturm, 5 lb je Platte · Körpergewicht: kein Rechner
+   Übungen mit Scheiben statt Steckgewicht (o.plates, z. B. Hackenschmidt, Beinpresse): 2,5-kg-Schritte */
 function wuGrid(equip){
   if(equip==='Langhantel')return {bar:20,step:2.5};
   if(equip==='Kurzhantel')return {db:1};
@@ -1014,7 +1038,7 @@ function wuScheme(repMin,equip,work){
 /* Aufwärmsätze zum Arbeitsgewicht. o.assist: unterstützte Übung (Gewicht = Hilfe), dann zählt Körpergewicht o.bw minus Hilfe.
    Stufen unter 0 % gelten als 0 %, über 100 % als 100 %. Stufen auf oder über dem Arbeitsgewicht (bzw. mit weniger Hilfe) und doppelte fallen weg. */
 function wuCalc(work,repMin,equip,o){
-  o=o||{};work=Number(work);var g=wuGrid(equip),out=[];
+  o=o||{};work=Number(work);var g=o.plates?{step:2.5}:wuGrid(equip),out=[];
   if(!g||!(work>0))return out;
   var sch=o.scheme||wuScheme(repMin,equip,work);
   if(o.assist){var bw=Number(o.bw),eff=bw-work;if(!(bw>0)||!(eff>0))return out;
@@ -1033,6 +1057,52 @@ function wuCalc(work,repMin,equip,o){
 /* wu-calc:end */
 
 function isDone(st){return st.done==null?(st.w!==''&&st.r!==''):!!st.done;}
+/* ---------- Aufwärmsätze im Training (W2) ---------- */
+/* Satz-Schlüssel: "ei.si" = Arbeitssatz si, "ei.wN" = Aufwärmsatz N. Aufwärmsätze liegen in entry.wu, getrennt von den Arbeitssätzen:
+   Vorwerte, Bestleistung, Fortschritt, Volumen und Zuklappen sehen sie nicht. */
+function setRef(w,k){var p=String(k).split('.'),ei=+p[0],e=w&&w.entries[ei];if(!e||p[1]==null)return null;
+  var wu=p[1].charAt(0)==='w',i=+(wu?p[1].slice(1):p[1]),st=(wu?(e.wu||[]):e.sets)[i];
+  return st?{e:e,ei:ei,i:i,st:st,wu:wu,k:ei+'.'+(wu?'w':'')+i}:null;}
+function wuSet(){return {w:'',r:'',note:'',done:false};}
+function wuTouched(st){return filled(st)||!!st.done;}
+function lastBw(){var b=null;S.bodyweight.forEach(function(x){if(!b||x.date>=b.date)b=x;});return b?Number(b.kg):0;}
+/* Arbeitsgewicht für den Rechner: heute eingetragen, sonst Hinweis (+2,5/+5 kg), sonst letztes Mal (unterstützt: geringste Hilfe) */
+function wuBase(w,ei){
+  var e=w.entries[ei],x=ex(e.exId),i;
+  for(i=0;i<e.sets.length;i++)if(Number(e.sets[i].w)>0)return {kg:Number(e.sets[i].w),src:'heute'};
+  var perf=lastPerf(e.exId,e.uni,w.id);if(!perf)return null;
+  var ws=perf.sets.map(function(q){return Number(q.w);}).filter(function(v){return v>0;});if(!ws.length)return null;
+  if(x.assist)return {kg:Math.min.apply(null,ws),src:'letztes Mal'};
+  var top=Math.max.apply(null,ws),h=progHint(e,perf);
+  return h?{kg:top+Number(String(h.inc).replace(',','.')),src:'Hinweis'}:{kg:top,src:'letztes Mal'};}
+function wuSugg(w,ei){var e=w.entries[ei],x=ex(e.exId),b=wuBase(w,ei);
+  return {base:b,rows:b?wuCalc(b.kg,e.repMin,x.equip,{assist:x.assist,bw:lastBw(),plates:x.plates}):[]};}
+/* Solange kein Aufwärmsatz angefasst und die Zahl nicht von Hand geändert ist (wuMan), folgt die Zeilenzahl dem Rechner */
+function wuSync(w,ei){var e=w.entries[ei];if(!e.wu||e.wuMan||e.wu.some(wuTouched))return;
+  var n=wuSugg(w,ei).rows.length||wuScheme(e.repMin,ex(e.exId).equip,0).length;
+  while(e.wu.length<n)e.wu.push(wuSet());e.wu.length=n;}
+function wuVals(e,sg){var x=ex(e.exId);return (x.assist?'Hilfe ':'')+e.wu.map(function(st,i){var r=sg.rows[i];
+  return filled(st)?dk(st.w)+'×'+st.r:(r?dk(r.w)+'×'+r.r:'–');}).join(' · ');}
+function wuCap(sg,e){return sg.base?'· aus '+dk(Math.round(sg.base.kg*100)/100)+' kg'+(e&&ex(e.exId).assist?' Hilfe':''):'';}
+/* Arbeitsgewicht geändert: Vorschläge (Platzhalter) und Zeile neu, ohne Neuaufbau (Tastatur bleibt offen) */
+function wuPh(w,ei){var e=w.entries[ei];if(!e||!e.wu)return;var sg=wuSugg(w,ei);
+  e.wu.forEach(function(st,i){var r=sg.rows[i];['w','r'].forEach(function(f){var q=document.querySelector('input[data-set="'+ei+'.w'+i+'.'+f+'"]');if(q)q.placeholder=r?String(r[f]):'';});});
+  Array.prototype.forEach.call(document.querySelectorAll('[data-wucap="'+ei+'"]'),function(c){c.textContent=wuCap(sg,e);});
+  var v=document.querySelector('[data-wuvals="'+ei+'"]');if(v)v.textContent=wuVals(e,sg);}
+/* Nach dem letzten Aufwärmsatz startet die normale Pause vor dem ersten Arbeitssatz; zwischen Aufwärmsätzen keine */
+function wuAfter(w,ei){var e=w.entries[ei];if(!(S.active&&w===S.active)||!e.wu)return;
+  if(e.wu.every(isDone)){audioCtx();wakeOn();startRest();}}
+function wuToggle(w,ref){var st=ref.st,now=!isDone(st);
+  if(now&&!filled(st)){var r=wuSugg(w,ref.ei).rows[ref.i];if(r){st.w=String(r.w);st.r=String(r.r);}}
+  st.done=now;save();syncRow(w,ref.ei,ref.k);
+  if(now)wuAfter(w,ref.ei);}
+/* Runder Haken in der zugeklappten Zeile: alle offenen mit dem Vorschlag abhaken; sind alle erledigt, wieder öffnen */
+function wuAll(w,ei){var e=w.entries[ei];if(!e.wu||!e.wu.length)return;
+  if(e.wu.every(isDone)){e.wu.forEach(function(st){st.done=false;});save();render();return;}
+  var sg=wuSugg(w,ei),miss=e.wu.some(function(st,i){return !isDone(st)&&!filled(st)&&!sg.rows[i];});
+  if(miss){ui.wuOpen[w.id+'|'+ei]=true;render();toast('Kein Vorschlag – bitte Gewicht selbst eintragen',3000);return;}
+  e.wu.forEach(function(st,i){if(isDone(st))return;if(!filled(st)){st.w=String(sg.rows[i].w);st.r=String(sg.rows[i].r);}st.done=true;});
+  save();render();wuAfter(w,ei);}
 function progOf(w){var d=0,t=0,s=w.kurz?sessionById(w.sessionId):null;
   w.entries.forEach(function(e){if(s){var sl=slotById(s,e.slotId);if(!(sl&&sl.anker))return;}   /* Kurzversion: ausgeblendete Übungen zählen nicht (M5) */
     e.sets.forEach(function(st){t++;if(isDone(st))d++;});});return {d:d,t:t};}
@@ -1041,14 +1111,16 @@ function updateProgress(){var w=wctx();if(!w)return;var p=progOf(w);
   if(f)f.style.transform='scaleX('+(p.t?(p.d/p.t):0).toFixed(3)+')';
   if(x)x.textContent=progTxt(p);}
 function progTxt(p){return p.d+' von '+p.t+' Sätzen';}
+/* si: Nummer des Arbeitssatzes oder ein Schlüssel wie "0.w1" (Aufwärmsatz) */
 function syncRow(w,ei,si){
-  var st=w.entries[ei].sets[si],dn=isDone(st);
-  var btn=document.querySelector('button[data-done="'+ei+'.'+si+'"]');
-  if(btn){btn.innerHTML=dn?ico('check'):(si+1);btn.setAttribute('aria-label','Satz '+(si+1)+(dn?' erledigt':' abhaken'));var tr=btn.parentNode.parentNode;
+  var ref=setRef(w,String(si).indexOf('.')>0?si:ei+'.'+si);if(!ref)return;
+  var st=ref.st,dn=isDone(st),k=ref.k,n=ref.i+1;
+  var btn=document.querySelector('button[data-done="'+k+'"]');
+  if(btn){btn.innerHTML=dn?ico('check'):(ref.wu?'':n);btn.setAttribute('aria-label',(ref.wu?'Aufwärmsatz ':'Satz ')+n+(dn?' erledigt':' abhaken'));var tr=btn.parentNode.parentNode;
     if(tr){var wasDn=tr.classList.contains('done');tr.classList.toggle('done',dn);if(dn&&!wasDn)btn.classList.add('just');if(!dn)btn.classList.remove('just');}}
-  var wi=document.querySelector('input[data-set="'+ei+'.'+si+'.w"]');if(wi&&wi.value!==st.w)wi.value=st.w;
-  var ri=document.querySelector('input[data-set="'+ei+'.'+si+'.r"]');if(ri&&ri.value!==st.r)ri.value=st.r;
-  var qi=document.querySelector('input[data-set="'+ei+'.'+si+'.rir"]');if(qi&&qi.value!==st.rir)qi.value=st.rir;}
+  var wi=document.querySelector('input[data-set="'+k+'.w"]');if(wi&&wi.value!==st.w)wi.value=st.w;
+  var ri=document.querySelector('input[data-set="'+k+'.r"]');if(ri&&ri.value!==st.r)ri.value=st.r;
+  var qi=document.querySelector('input[data-set="'+k+'.rir"]');if(qi&&qi.value!==st.rir)qi.value=st.rir;}
 function foldCard(w,ei,force){
   var card=document.querySelectorAll('.card.entry')[ei];if(!card)return false;
   var was=card.classList.contains('folded');
@@ -1080,7 +1152,9 @@ function afterDone(w,ei){
 function toggleDone(w,key){
   if(_auto&&_auto.k===key&&Date.now()-_auto.t<500){_auto=null;return;}
   delete _dirty[key];
-  var pr=key.split('.'),ei=+pr[0],si=+pr[1],e=w.entries[ei],st=e.sets[si];
+  var ref=setRef(w,key);if(!ref)return;
+  if(ref.wu){wuToggle(w,ref);return;}
+  var ei=ref.ei,si=ref.i,e=ref.e,st=ref.st;
   var now=!isDone(st);
   if(now&&!filled(st)){
     var perf=lastPerf(e.exId,e.uni,w.id),ph=perf&&perf.sets[si];
@@ -1100,8 +1174,15 @@ function rowKey(el){if(!el||!el.dataset)return null;var d=el.dataset;
 function leaveRow(k){
   var o=_dirty[k];if(!o)return;delete _dirty[k];
   var w=o.w;if(w!==S.active&&S.workouts.indexOf(w)<0)return;
-  var ei=w.entries.indexOf(o.e),si=ei<0?-1:o.e.sets.indexOf(o.st);if(si<0)return;
+  var ei=w.entries.indexOf(o.e),si=ei<0?-1:o.e.sets.indexOf(o.st);
   var st=o.st,both=st.w!==''&&st.r!=='',dn=isDone(st),live=!!(S.active&&w===S.active);
+  /* Aufwärmsatz (W2): gleiche Regel, aber ohne Bestleistung, Fortschritt und Zuklappen */
+  var wi=si<0&&ei>=0?(o.e.wu||[]).indexOf(o.st):-1;
+  if(wi>=0){var wk=ei+'.w'+wi;
+    if(both&&!dn){st.done=true;var ae0=document.activeElement;_auto=(!ae0||ae0===document.body)?{k:wk,t:Date.now()}:null;save();syncRow(w,ei,wk);wuAfter(w,ei);return;}
+    if(!both&&dn)st.done=false;
+    save();syncRow(w,ei,wk);return;}
+  if(si<0)return;
   if(both&&!dn){st.done=true;
     /* Sperre gegen Doppel-Auslösen nur, wenn der Fokus ins Leere ging (iPhone: Tipp auf den Haken) */
     var ae=document.activeElement;_auto=(!ae||ae===document.body)?{k:ei+'.'+si,t:Date.now()}:null;save();syncRow(w,ei,si);updateProgress();refreshPR(w,ei,si);afterDone(w,ei);return;}
@@ -1112,20 +1193,23 @@ document.addEventListener('focusout',function(ev){
   if(rowKey(ev.relatedTarget)===k)return;
   setTimeout(function(){if(rowKey(document.activeElement)===k)return;leaveRow(k);},0);});
 function stepVal(w,key){
-  var pr=key.split('|'),ei=+pr[0],si=+pr[1],f=pr[2],dl=Number(pr[3]);
-  var e=w.entries[ei],st=e.sets[si],cur=Number(st[f]);
+  var pr=key.split('|'),ref=setRef(w,pr[0]+'.'+pr[1]);if(!ref)return;
+  var ei=ref.ei,si=ref.i,f=pr[2],dl=Number(pr[3]);
+  var e=ref.e,st=ref.st,cur=Number(st[f]);
   if(st[f]===''||isNaN(cur)){
-    var perf=lastPerf(e.exId,e.uni,w.id),ph=perf&&perf.sets[si];
-    cur=ph&&ph[f]!==''?Number(ph[f]):(f==='r'?e.repMin:f==='rir'?rirGoal(w.date):dl);
+    if(ref.wu){var sr=wuSugg(w,ei).rows[si];cur=sr?Number(sr[f]):(f==='r'?5:dl);}   /* Aufwärmsatz: leeres Feld übernimmt den Vorschlag */
+    else{var perf=lastPerf(e.exId,e.uni,w.id),ph=perf&&perf.sets[si];
+      cur=ph&&ph[f]!==''?Number(ph[f]):(f==='r'?e.repMin:f==='rir'?rirGoal(w.date):dl);}
     if(isNaN(cur))cur=0;
   }else cur=cur+dl;
-  cur=f==='w'?Math.round(cur*4)/4:Math.round(cur);
+  /* W2: kg nur noch von Rechenrauschen befreien statt auf 0,25 zu runden, sonst würden genaue Plattenwerte (45,4) verfälscht */
+  cur=f==='w'?Math.round(cur*100)/100:Math.round(cur);
   if(cur<0)cur=0;
   if(f==='rir'&&cur>10)cur=10;
   st[f]=String(cur);
   /* Schritte zählen wie Tippen (E-1): nie sofort abhaken, ausgewertet wird erst beim Verlassen der Zeile */
-  _dirty[ei+'.'+si]={w:w,e:e,st:st};
-  syncRow(w,ei,si);refreshPR(w,ei,si);saveLazy();}
+  _dirty[ref.k]={w:w,e:e,st:st};
+  syncRow(w,ei,ref.k);if(ref.wu)saveLazy();else{refreshPR(w,ei,si);if(f==='w')wuPh(w,ei);saveLazy();}}
 function toggleNoteRow(key){
   var tr=document.querySelector('tr[data-nr="'+key+'"]');if(!tr)return;
   var on=tr.classList.toggle('on');
@@ -1516,7 +1600,7 @@ function renderWorkout(a,isActive){
     h+='<div class="card entry'+(sl&&sl.anker?' anker':'')+(isActive&&allDone?' folded':'')+(role==='a'?' ssA':role==='b'?' ssB':'')+'" data-m="'+esc(x.muscle)+'" data-sum="'+esc(fmtSets(e.sets.filter(filled))||'erledigt')+'">';
     h+='<div class="row click" data-fold="'+ei+'"><div class="grow"><span class="exname">'+esc(x.name)+'</span> '+(sl&&sl.anker?'<span class="pill a">Anker</span>':'')+' '+mpill(x.muscle)+' <span class="pill">'+esc(x.equip)+'</span>'+(hasPR?' <span class="pill pr">PR</span>':'')+(role?' <span class="pill ss">Supersatz '+(role==='a'?'1/2':'2/2')+'</span>':'')+'</div><button class="tiny danger" data-edel="'+ei+'" aria-label="Übung entfernen">'+ico('x')+'</button></div>';
     h+='<div class="ebody"><div>';
-    h+='<div class="row" style="margin-top:.35rem"><button class="tiny" data-swap="'+ei+'">Übung tauschen</button>'+uniSeg('uni',ei,e.uni);
+    h+='<div class="row" style="margin-top:.35rem"><button class="tiny" data-swap="'+ei+'">Übung tauschen</button>'+(e.wu?'':'<button class="tiny" data-wuadd="'+ei+'">+ Aufwärmen</button>')+uniSeg('uni',ei,e.uni);
     if(sl&&!planned)h+='<button class="tiny acc" data-persist="'+ei+'">Dauerhaft im Plan</button>';
     h+='</div>';
     h+='<div class="cue"><b>Ziel:</b> '+e.setsTarget+' × '+e.repMin+'–'+e.repMax+(e.uni?' je Seite':'')+(x.goal?' · '+esc(x.goal):'')+'</div>';
@@ -1528,7 +1612,23 @@ function renderWorkout(a,isActive){
     h+='<p class="last">'+(perf?'Letztes Mal ('+fmtDate(perf.date)+'): '+esc(fmtSets(perf.sets)):'Noch keine Daten für diese Variante.')+'</p>';
     if(perf&&perf.note)h+='<div class="notebox">Notiz letztes Mal: '+esc(perf.note)+'</div>';
     if(hint)h+='<p class="hint"><b>Heute +'+hint.inc+' kg</b> · wieder ab '+hint.from+' Wdh.<span class="vh"> Letztes Mal lagen alle Sätze oben im Bereich.</span></p>';
+    /* Aufwärmen (W2): zugeklappt eine Zeile über der Tabelle, aufgeklappt eigene Gruppe in der Tabelle */
+    var wuOpen=false,sg=null;
+    if(e.wu){wuSync(a,ei);sg=wuSugg(a,ei);wuOpen=!!ui.wuOpen[a.id+'|'+ei];
+      if(!wuOpen){var wd=e.wu.filter(isDone).length,wall=wd===e.wu.length;
+        h+='<div class="wu-line'+(wall?' done':'')+'"><button class="chk" data-wuall="'+ei+'" aria-label="'+(wall?'Aufwärmsätze wieder öffnen':'Alle Aufwärmsätze abhaken')+'">'+(wall?ico('check'):'')+'</button>'
+          +'<div class="t click" data-wufold="'+ei+'"><b>'+(wall?'Aufwärmen erledigt':'Aufwärmen'+(wd?' <span>· '+wd+' von '+e.wu.length+'</span>':' <span data-wucap="'+ei+'">'+wuCap(sg,e)+'</span>'))+'</b><span data-wuvals="'+ei+'">'+esc(wuVals(e,sg))+'</span></div>'
+          +'<button class="more" data-wufold="'+ei+'" aria-label="Aufwärmsätze anzeigen">'+ico('chevR')+'</button></div>';}}
     h+='<table class="sets"><thead><tr><th class="n"></th><th class="w">kg</th><th class="r">Wdh</th><th class="rir">RIR</th><th class="nt"></th></tr></thead><tbody>';
+    if(e.wu&&wuOpen){
+      h+='<tr class="grp"><td colspan="4">Aufwärmen <span data-wucap="'+ei+'">'+wuCap(sg,e)+'</span></td><td class="nt"><button class="more" data-wufold="'+ei+'" aria-label="Aufwärmsätze zuklappen">'+ico('chevR','wuchev')+'</button></td></tr>';
+      e.wu.forEach(function(st,i){var dn=isDone(st),r=sg.rows[i],k=ei+'.w'+i;
+        h+='<tr class="setrow wu'+(dn?' done':'')+'"><td class="n"><button class="chk" data-done="'+k+'" aria-label="Aufwärmsatz '+(i+1)+(dn?' erledigt':' abhaken')+'">'+(dn?ico('check'):'')+'</button></td>'
+          +'<td class="w"><input type="number" step="0.5" inputmode="decimal" data-set="'+k+'.w" value="'+esc(st.w)+'" placeholder="'+(r?esc(String(r.w)):'')+'"></td>'
+          +'<td class="r"><input type="number" inputmode="numeric" data-set="'+k+'.r" value="'+esc(st.r)+'" placeholder="'+(r?r.r:'')+'"></td><td class="rir"></td>'
+          +'<td class="nt"><button class="xb" data-wudel="'+ei+'.'+i+'" aria-label="Aufwärmsatz entfernen">'+ico('x')+'</button></td></tr>';});
+      h+='<tr class="wu-act"><td></td><td colspan="4"><div class="row"><button class="tiny" data-wuplus="'+ei+'">+ Aufwärmsatz</button><span class="grow"></span><button class="tiny danger" data-wunone="'+ei+'">Heute ohne</button></div></td></tr>';
+      h+='<tr class="grp"><td colspan="5">Arbeitssätze</td></tr>';}
     e.sets.forEach(function(st,si){
       var ph=perf&&perf.sets[si]?perf.sets[si]:null;var dn=isDone(st);
       var isPR=dn&&prBase>0&&e1(st)>prBase*1.001;
@@ -1643,7 +1743,7 @@ function dayDetail(d){
     var open=ui.openW===w.id;
     h+='<div class="card"><div class="row click" data-openw="'+w.id+'" role="button" aria-expanded="'+open+'"><div class="grow"><b>'+esc(w.sessionName||'Training')+'</b>'+(w.kurz?' <span class="pill a">Kurz</span>':'')+'<div class="small mute">'+w.entries.length+' Übungen · '+setCount(w)+' Sätze</div></div><span class="mute chev-w'+(open?' open':'')+'">'+ico('chevR')+'</span></div>';
     if(open){if(w.note)h+='<div class="notebox">'+esc(w.note)+'</div>';
-      w.entries.forEach(function(e){var dn=e.sets.filter(filled);h+='<div class="list-item"><b>'+esc(ex(e.exId).name)+'</b>'+(e.uni?' <span class="small mute">je Seite</span>':'')+'<div class="hist-sets">'+(dn.length?esc(fmtSets(dn)):'<span class="mute">nichts eingetragen</span>')+'</div>'+(e.note?'<div class="small mute">'+esc(e.note)+'</div>':'')+e.sets.map(function(x,i){return x.note?'<div class="small mute">Satz '+(i+1)+': '+esc(x.note)+'</div>':'';}).join('')+'</div>';});}
+      w.entries.forEach(function(e){var dn=e.sets.filter(filled),wf=(e.wu||[]).filter(filled);h+='<div class="list-item"><b>'+esc(ex(e.exId).name)+'</b>'+(e.uni?' <span class="small mute">je Seite</span>':'')+(wf.length?'<div class="small mute">Aufwärmen: '+esc(fmtSets(wf))+'</div>':'')+'<div class="hist-sets">'+(dn.length?esc(fmtSets(dn)):'<span class="mute">nichts eingetragen</span>')+'</div>'+(e.note?'<div class="small mute">'+esc(e.note)+'</div>':'')+e.sets.map(function(x,i){return x.note?'<div class="small mute">Satz '+(i+1)+': '+esc(x.note)+'</div>':'';}).join('')+'</div>';});}
     h+='<div class="row" style="margin-top:.5rem"><button class="tiny primary" data-editw="'+w.id+'">Bearbeiten</button><span class="grow"></span><button class="tiny danger" data-act="wdel" data-id="'+w.id+'">Löschen</button></div></div>';
   });
   inf.acts.forEach(function(a){
@@ -1721,13 +1821,13 @@ function renderMore(){
 /* ---------- Aktionen ---------- */
 function startWorkout(sid,date){
   var s=sessionById(sid);var entries=[];
-  if(s)entries=s.slots.map(function(sl){var arr=[];for(var i=0;i<sl.sets;i++)arr.push(emptySet());return {slotId:sl.id,exId:sl.exId,uni:!!sl.uni,sets:arr,setsTarget:sl.sets,repMin:sl.repMin,repMax:sl.repMax,note:''};});
+  if(s)entries=s.slots.map(function(sl){var arr=[];for(var i=0;i<sl.sets;i++)arr.push(emptySet());var en={slotId:sl.id,exId:sl.exId,uni:!!sl.uni,sets:arr,setsTarget:sl.sets,repMin:sl.repMin,repMax:sl.repMax,note:''};if(sl.wu)en.wu=[];return en;});   /* Aufwärmen laut Plan: Zeilen füllt wuSync */
   return {id:uid(),date:date||today(),sessionId:sid||'',sessionName:s?s.name:'Freies Training',kurz:false,note:'',entries:entries};
 }
 function finishSave(){
   var a=S.active;
   /* Leere Aufwärmsätze und leere Drops fallen weg (W1); eine Übung mit nur Aufwärmsätzen bleibt erhalten */
-  a.entries.forEach(function(e){if(e.wu){e.wu=e.wu.filter(filled);if(!e.wu.length)delete e.wu;}
+  a.entries.forEach(function(e){delete e.wuMan;if(e.wu){e.wu=e.wu.filter(filled);if(!e.wu.length)delete e.wu;}
     e.sets.forEach(function(st){if(st.drops){st.drops=st.drops.filter(filled);if(!st.drops.length)delete st.drops;}});});
   a.entries.forEach(function(e){if(!e.sets.some(filled)&&!e.note&&!e.wu)e._empty=true;});
   a.entries=a.entries.filter(function(e){return !e._empty;});a.entries.forEach(function(e){delete e._empty;});
@@ -1836,7 +1936,7 @@ document.addEventListener('pointercancel',sheetDragEnd);
 document.addEventListener('click',function(ev){if(Date.now()-_sdEnd<350){ev.stopPropagation();ev.preventDefault();}},true);
 
 document.addEventListener('click',function(ev){
-  var el=ev.target.closest('[data-tab],[data-start],[data-sumclose],[data-sumcal],[data-act],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-del],[data-panker],[data-puni],[data-addslot],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-noteopen],[data-fold],[data-undo],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
+  var el=ev.target.closest('[data-tab],[data-start],[data-sumclose],[data-sumcal],[data-act],[data-openw],[data-editw],[data-exopen],[data-day],[data-jump],[data-calnav],[data-calmode],[data-pick],[data-pkclose],[data-pkm],[data-pke],[data-exm],[data-exe],[data-swap],[data-uni],[data-setplus],[data-setminus],[data-copy],[data-persist],[data-edel],[data-adel],[data-pickplan],[data-del],[data-panker],[data-puni],[data-addslot],[data-sdel],[data-exdel],[data-stop],[data-rest],[data-done],[data-noteopen],[data-fold],[data-undo],[data-wuall],[data-wufold],[data-wuadd],[data-wuplus],[data-wunone],[data-wudel],[data-ptog],[data-sdup],[data-pss],[data-addalt],[data-rot],[data-rotdel],[data-wrot],[data-nxm],[data-nxe],[data-nxr],[data-nxsave],[data-nxcancel],[data-nxbg]');
   if(!el)return;var d=el.dataset,parts;
   if(d.undo){var uf=undoFn;undoFn=null;document.getElementById('toast').classList.remove('show');
     if(uf){uf();save();render();toast('Wiederhergestellt');}return;}
@@ -1896,6 +1996,16 @@ document.addEventListener('click',function(ev){
   if(w){
     if(d.act==='kurz'){w.kurz=!w.kurz;save();render();return;}
     if(d.wrot!==undefined){var wp=d.wrot.split('|'),we=w.entries[+wp[0]],wx=ex(wp[1]);we.exId=wp[1];we.repMin=wx.reps[0];we.repMax=wx.reps[1];if(!wx.uniOk)we.uni=false;save();render();return;}
+    /* Aufwärmen spontan ändern (W2): dazunehmen, Satz dazu/weg, heute ohne; Plan bleibt unverändert */
+    if(d.wufold!==undefined){var wfk=w.id+'|'+d.wufold;ui.wuOpen[wfk]=!ui.wuOpen[wfk];render();return;}
+    if(d.wuall!==undefined){wuAll(w,+d.wuall);return;}
+    if(d.wuadd!==undefined){var wa=w.entries[+d.wuadd];wa.wu=[];delete wa.wuMan;save();render();return;}
+    if(d.wuplus!==undefined){var wp2=w.entries[+d.wuplus];wp2.wu.push(wuSet());wp2.wuMan=true;save();render();return;}
+    if(d.wudel!==undefined){var wdp=d.wudel.split('.'),wde=w.entries[+wdp[0]],wdi=+wdp[1],wgone=wde.wu.splice(wdi,1)[0];wde.wuMan=true;
+      if(!wde.wu.length){delete wde.wu;delete wde.wuMan;}save();render();
+      if(wuTouched(wgone))toastUndo('Aufwärmsatz entfernt',function(){if(!wde.wu)wde.wu=[];wde.wu.splice(Math.min(wdi,wde.wu.length),0,wgone);wde.wuMan=true;});return;}
+    if(d.wunone!==undefined){var wne=w.entries[+d.wunone],wold=wne.wu,wman=wne.wuMan;delete wne.wu;delete wne.wuMan;save();render();
+      toastUndo('Heute ohne Aufwärmen',function(){wne.wu=wold;if(wman)wne.wuMan=wman;});return;}
     if(d.swap!==undefined){openPicker({mode:'swap',ei:+d.swap,muscle:ex(w.entries[+d.swap].exId).muscle},ex(w.entries[+d.swap].exId).muscle);return;}
     if(d.uni!==undefined){var e=w.entries[+d.uni],uv=d.val==='1';if(!!e.uni!==uv){e.uni=uv;save();render();}return;}
     if(d.setplus!==undefined){w.entries[+d.setplus].sets.push(emptySet());save();render();return;}
@@ -1993,9 +2103,9 @@ document.addEventListener('input',function(ev){
   if(t.id==='pk_q'&&ui.picker){ui.picker.q=t.value;var l=document.getElementById('pk_list');if(l)l.innerHTML=pickerListHTML();return;}
   var w=wctx();
   if(w){
-    if(d.set){parts=d.set.split('.');var st=w.entries[+parts[0]].sets[+parts[1]];st[parts[2]]=t.value;
+    if(d.set){parts=d.set.split('.');var sref=setRef(w,parts[0]+'.'+parts[1]);if(!sref)return;var st=sref.st;st[parts[2]]=t.value;
       if(parts[2]==='note'){var nb=document.querySelector('button[data-noteopen="'+parts[0]+'.'+parts[1]+'"]');if(nb)nb.classList.toggle('has',t.value!=='');}
-      else _dirty[parts[0]+'.'+parts[1]]={w:w,e:w.entries[+parts[0]],st:st};
+      else{_dirty[sref.k]={w:w,e:sref.e,st:st};if(!sref.wu&&parts[2]==='w')wuPh(w,sref.ei);}
       saveLazy();return;}
     if(d.enote!==undefined){w.entries[+d.enote].note=t.value;saveLazy();return;}
     if(d.wnote){w.note=t.value;saveLazy();return;}
