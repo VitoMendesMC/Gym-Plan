@@ -1096,6 +1096,8 @@ function setRef(w,k){var p=String(k).split('.'),ei=+p[0],e=w&&w.entries[ei];if(!
     return ds?{e:e,ei:ei,i:dj,si:+q[0],st:ds,drop:true,k:ei+'.d'+(+q[0])+'-'+dj}:null;}
   var wu=p[1].charAt(0)==='w',i=+(wu?p[1].slice(1):p[1]),st=(wu?(e.wu||[]):e.sets)[i];
   return st?{e:e,ei:ei,i:i,st:st,wu:wu,k:ei+'.'+(wu?'w':'')+i}:null;}
+/* Aufklapp-Zustand „Aufwärmen“ hängt an der Übung (slotId), nicht an der Position: nach „Übung entfernen“ rutscht er nicht weiter (Phase 9, Block 5) */
+function wuKey(w,ei){var e=w.entries[ei];return w.id+'|'+(e&&e.slotId||ei);}
 function wuSet(){return {w:'',r:'',note:'',done:false};}
 function wuTouched(st){return filled(st)||!!st.done;}
 function lastBw(){var b=null;S.bodyweight.forEach(function(x){if(!b||x.date>=b.date)b=x;});return b?Number(b.kg):0;}
@@ -1133,7 +1135,7 @@ function wuToggle(w,ref){var st=ref.st,now=!isDone(st);
 function wuAll(w,ei){var e=w.entries[ei];if(!e.wu||!e.wu.length)return;
   if(e.wu.every(isDone)){e.wu.forEach(function(st){st.done=false;});save();render();return;}
   var sg=wuSugg(w,ei),miss=e.wu.some(function(st,i){return !isDone(st)&&!filled(st)&&!sg.rows[i];});
-  if(miss){ui.wuOpen[w.id+'|'+ei]=true;render();toast('Kein Vorschlag – bitte Gewicht selbst eintragen',3000);return;}
+  if(miss){ui.wuOpen[wuKey(w,ei)]=true;render();toast('Kein Vorschlag – bitte Gewicht selbst eintragen',3000);return;}
   e.wu.forEach(function(st,i){if(isDone(st))return;if(!filled(st)){st.w=String(sg.rows[i].w);st.r=String(sg.rows[i].r);}st.done=true;});
   save();render();wuAfter(w,ei);}
 /* ---------- Drops (W3) ---------- */
@@ -1747,7 +1749,7 @@ function renderWorkout(a,isActive){
     if(hint)h+='<p class="hint"><b>Heute '+(x.assist?'−'+hint.inc+' kg Hilfe':'+'+hint.inc+' kg')+'</b> · wieder ab '+hint.from+' Wdh.<span class="vh"> Letztes Mal lagen alle Sätze oben im Bereich.</span></p>';
     /* Aufwärmen (W2): zugeklappt eine Zeile über der Tabelle, aufgeklappt eigene Gruppe in der Tabelle */
     var wuOpen=false,sg=null;
-    if(e.wu){wuSync(a,ei);sg=wuSugg(a,ei);wuOpen=!!ui.wuOpen[a.id+'|'+ei];
+    if(e.wu){wuSync(a,ei);sg=wuSugg(a,ei);wuOpen=!!ui.wuOpen[wuKey(a,ei)];
       if(!wuOpen){var wd=e.wu.filter(isDone).length,wall=wd===e.wu.length;
         h+='<div class="wu-line'+(wall?' done':'')+'"><button class="chk" data-wuall="'+ei+'" aria-label="'+(wall?'Aufwärmsätze wieder öffnen':'Alle Aufwärmsätze abhaken')+'">'+(wall?ico('check'):'')+'</button>'
           +'<div class="t click" data-wufold="'+ei+'"><b>'+(wall?'Aufwärmen erledigt':'Aufwärmen'+(wd?' <span>· '+wd+' von '+e.wu.length+'</span>':' <span data-wucap="'+ei+'">'+wuCap(sg,e)+'</span>'))+'</b><span data-wuvals="'+ei+'">'+esc(wuVals(e,sg))+'</span></div>'
@@ -1782,7 +1784,7 @@ function renderWorkout(a,isActive){
   if(isActive)h+='<div class="card"><label class="small">Einheit</label>'+dn('0')+'<label class="small" style="margin-top:.75rem">Notiz</label><textarea data-wnote="1" placeholder="Schlaf, Energie, Gym voll, was auch immer relevant ist">'+esc(a.note)+'</textarea></div>';
   else h+='<div class="card"><label class="small">Notiz zur Einheit</label><textarea data-wnote="1" placeholder="Schlaf, Energie, Gym voll, was auch immer relevant ist">'+esc(a.note)+'</textarea></div>';
   if(isActive){
-    if(ui.finish){h+='<div class="card"><b>Einheit beenden?</b><p class="small mute">Gespeichert wird alles Eingetragene, auch wenn Übungen offen sind. Leere Sätze fallen weg.</p><div class="row"><button class="primary grow" data-act="finishsave">Speichern</button></div><div class="row" style="margin-top:.5rem"><button class="grow" data-act="finishback">Weitertrainieren</button></div><div class="row" style="margin-top:1.6rem"><button class="danger grow" data-act="finishdiscard">Verwerfen</button></div></div>';}   /* untereinander wie ein iOS-Dialog, Verwerfen abgesetzt */
+    if(ui.finish){h+='<div class="card"><b>Einheit beenden?</b><p class="small mute">Gespeichert wird alles Eingetragene, auch wenn Übungen offen sind. Übungen ohne Eintrag fallen weg.</p><div class="row"><button class="primary grow" data-act="finishsave">Speichern</button></div><div class="row" style="margin-top:.5rem"><button class="grow" data-act="finishback">Weitertrainieren</button></div><div class="row" style="margin-top:1.6rem"><button class="danger grow" data-act="finishdiscard">Verwerfen</button></div></div>';}   /* untereinander wie ein iOS-Dialog, Verwerfen abgesetzt */
     else h+='<div class="row" style="margin-top:1rem"><button class="primary grow" data-act="finish">Einheit beenden</button></div>';
   }else{
     h+='<div class="row" style="margin-top:1rem"><button class="primary grow" data-act="editdone">Fertig</button></div>';
@@ -1960,11 +1962,13 @@ function startWorkout(sid,date){
   if(s)entries=s.slots.map(function(sl){var arr=[];for(var i=0;i<sl.sets;i++)arr.push(emptySet());var en={slotId:sl.id,exId:sl.exId,uni:!!sl.uni,sets:arr,setsTarget:sl.sets,repMin:sl.repMin,repMax:sl.repMax,note:''};if(sl.wu)en.wu=[];return en;});   /* Aufwärmen laut Plan: Zeilen füllt wuSync */
   return {id:uid(),date:date||today(),sessionId:sid||'',sessionName:s?s.name:'Freies Training',kurz:false,note:'',entries:entries};
 }
+/* Leere Aufwärmsätze und leere Drops entfernen, Merker „von Hand geändert“ weg. Beim Speichern und beim Kalender-„Fertig“ (Phase 9, Block 5) */
+function tidyWu(w){w.entries.forEach(function(e){delete e.wuMan;if(e.wu){e.wu=e.wu.filter(filled);if(!e.wu.length)delete e.wu;}
+    e.sets.forEach(function(st){if(st.drops){st.drops=st.drops.filter(filled);if(!st.drops.length)delete st.drops;}});});}
 function finishSave(){
   var a=S.active;
   /* Leere Aufwärmsätze und leere Drops fallen weg (W1); eine Übung mit nur Aufwärmsätzen bleibt erhalten */
-  a.entries.forEach(function(e){delete e.wuMan;if(e.wu){e.wu=e.wu.filter(filled);if(!e.wu.length)delete e.wu;}
-    e.sets.forEach(function(st){if(st.drops){st.drops=st.drops.filter(filled);if(!st.drops.length)delete st.drops;}});});
+  tidyWu(a);
   a.entries.forEach(function(e){if(!e.sets.some(filled)&&!e.note&&!e.wu)e._empty=true;});
   a.entries=a.entries.filter(function(e){return !e._empty;});a.entries.forEach(function(e){delete e._empty;});
   S.workouts.push(a);
@@ -2150,7 +2154,7 @@ document.addEventListener('click',function(ev){
     if(d.act==='kurz'){w.kurz=!w.kurz;save();render();return;}
     if(d.wrot!==undefined){var wp=d.wrot.split('|'),we=w.entries[+wp[0]],wx=ex(wp[1]);we.exId=wp[1];we.repMin=wx.reps[0];we.repMax=wx.reps[1];if(!wx.uniOk)we.uni=false;save();render();return;}
     /* Aufwärmen spontan ändern (W2): dazunehmen, Satz dazu/weg, heute ohne; Plan bleibt unverändert */
-    if(d.wufold!==undefined){var wfk=w.id+'|'+d.wufold;ui.wuOpen[wfk]=!ui.wuOpen[wfk];render();return;}
+    if(d.wufold!==undefined){var wfk=wuKey(w,+d.wufold);ui.wuOpen[wfk]=!ui.wuOpen[wfk];render();return;}
     if(d.wuall!==undefined){wuAll(w,+d.wuall);return;}
     if(d.wuadd!==undefined){var wa=w.entries[+d.wuadd];wa.wu=[];delete wa.wuMan;save();render();return;}
     if(d.wuplus!==undefined){var wp2=w.entries[+d.wuplus];wp2.wu.push(wuSet());wp2.wuMan=true;save();render();return;}
@@ -2183,7 +2187,7 @@ document.addEventListener('click',function(ev){
     if(d.act==='finishback'){ui.finish=false;render();return;}
     if(d.act==='finishsave'){finishSave();return;}
     if(d.act==='finishdiscard'){if(confirm('Einheit verwerfen? Alle Eingaben gehen verloren.')){S.active=null;ui.finish=false;stopRest();wakeOff();save();render();}return;}
-    if(d.act==='editdone'){ui.editId=null;save();render();return;}
+    if(d.act==='editdone'){tidyWu(w);ui.editId=null;save();render();return;}
     if(d.act==='wdel'){deleteWorkout(d.id);return;}
   }
   /* Kalender */
