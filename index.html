@@ -912,7 +912,8 @@ function lastPerf(exId,uni,excludeId){
   var l=lpIndex()[exId+'|'+(uni?1:0)]||[];
   for(var i=0;i<l.length;i++){var w=l[i].w,e=l[i].e;if(w.id===excludeId)continue;
     if(e.exId!==exId||!!e.uni!==!!uni)continue;
-    var done=e.sets.filter(filled);if(done.length)return {date:w.date,sets:done,note:e.note};}
+    /* sets: nur ausgefüllte (Anzeige „Letztes Mal“, Rechner). all: alle Sätze nach Satznummer (Vorwerte), n: Satzzahl bis zum letzten ausgefüllten */
+    var done=e.sets.filter(filled);if(done.length){var nn=0;e.sets.forEach(function(q,qi){if(filled(q))nn=qi+1;});return {date:w.date,sets:done,all:e.sets,n:nn,note:e.note};}}
   return null;
 }
 function dk(v){return String(v).replace('.',',');}
@@ -1245,7 +1246,7 @@ function toggleDone(w,key){
   var ei=ref.ei,si=ref.i,e=ref.e,st=ref.st;
   var now=!isDone(st);
   if(now&&!filled(st)){
-    var perf=lastPerf(e.exId,e.uni,w.id),ph=perf&&perf.sets[si];
+    var perf=lastPerf(e.exId,e.uni,w.id),ph=perf&&perf.all[si];
     if(ph&&(ph.w!==''||ph.r!=='')){st.w=ph.w;st.r=ph.r;toast('Werte von '+fmtDate(perf.date)+' übernommen');}
   }
   st.done=now;save();syncRow(w,ei,si);updateProgress();
@@ -1291,7 +1292,7 @@ function stepVal(w,key){
     if(ref.wu){var sr=wuSugg(w,ei).rows[si];cur=sr?Number(sr[f]):(f==='r'?5:dl);}   /* Aufwärmsatz: leeres Feld übernimmt den Vorschlag */
     else if(ref.drop){var pa=e.sets[ref.si],pd=si>0?pa.drops[si-1]:pa;   /* Drop: kg = Vorschlag, Wdh = vom Satz davor */
       cur=f==='w'?(dropSugg(w,ei,ref.si,si)||dl):(pd.r!==''?Number(pd.r):e.repMin);}
-    else{var perf=lastPerf(e.exId,e.uni,w.id),ph=perf&&perf.sets[si];
+    else{var perf=lastPerf(e.exId,e.uni,w.id),ph=perf&&perf.all[si];
       cur=ph&&ph[f]!==''?Number(ph[f]):(f==='r'?e.repMin:f==='rir'?rirGoal(w.date):dl);}
     if(isNaN(cur))cur=0;
   }else cur=cur+dl;
@@ -1307,6 +1308,21 @@ function toggleNoteRow(key){
   var tr=document.querySelector('tr[data-nr="'+key+'"]');if(!tr)return;
   var on=tr.classList.toggle('on');
   if(on){var i=tr.querySelector('input');if(i)i.focus();}}
+/* Leere Satznotiz klappt wieder zu, sobald der Fokus sie verlässt (Phase 9, Block 3). Mit Text bleibt sie offen.
+   Ein Tipp in derselben Zeile (z. B. „+ Drop“) oder auf den Stift zählt nicht: pointerdown kommt vor dem Fokusverlust. */
+var _nrPd=null;
+document.addEventListener('pointerdown',function(ev){var e=ev.target.closest?ev.target.closest('tr.noterow,[data-noteopen]'):null;
+  _nrPd=e?{k:e.dataset.nr||e.dataset.noteopen,t:Date.now()}:null;},true);
+document.addEventListener('focusout',function(ev){
+  var t=ev.target,ds=t.dataset&&t.dataset.set;if(!ds||ds.slice(-5)!=='.note')return;
+  var tr=t.closest('tr.noterow');if(!tr)return;
+  setTimeout(function(){
+    if(!tr.isConnected||!tr.classList.contains('on')||t.value!=='')return;
+    if(_nrPd&&_nrPd.k===tr.dataset.nr&&Date.now()-_nrPd.t<700)return;
+    var ae=document.activeElement;if(tr.contains(ae))return;
+    /* Liegt das neu angetippte Feld darunter, rückt es beim Zuklappen hoch: um genau diese Strecke ausgleichen, damit es stehen bleibt */
+    var fe=ae&&ae!==document.body&&ae.getBoundingClientRect?ae:null,y0=fe?fe.getBoundingClientRect().top:0;
+    tr.classList.remove('on');if(fe){var dy=fe.getBoundingClientRect().top-y0;if(dy)window.scrollBy(0,dy);}},0);});
 
 /* ---------- Pausentimer ---------- */
 var RKEY='trainingsapp.rest';
@@ -1384,7 +1400,12 @@ function kbTrack(){
       b[1].setAttribute('data-stp',k+'|'+f[0]);b[1].textContent='+'+f[1];b[1].setAttribute('aria-label',f[1]+' '+f[3]+' mehr');
       document.getElementById('kb_u').textContent=f[2];
       if(document.body.classList.contains('kbon'))kbRevealSoon();}}
+  /* Phase 9, Block 3: iOS meldet die Tastatur nicht immer mit einem Ereignis. Fokus in kg/Wdh/RIR, aber noch keine Tastatur erkannt:
+     mehrmals nachmessen, damit die Leiste nicht erst nach mehreren Tipps erscheint */
+  if(kbKey&&!document.body.classList.contains('kbd'))kbRecheck();
   kbSyncBar();}
+var _kbChk=[];
+function kbRecheck(){_kbChk.forEach(clearTimeout);_kbChk=[120,300,600,1000].map(function(ms){return setTimeout(kbSync,ms);});}
 function kbSyncBar(){
   var b=document.body,on=!!kbKey&&b.classList.contains('kbd'),was=b.classList.contains('kbon');
   b.classList.toggle('kbon',on);
@@ -1416,16 +1437,27 @@ document.addEventListener('focusout',function(){setTimeout(kbTrack,0);});
 
 /* ---------- Ton, Vibration, Bildschirm ---------- */
 var AC=null;
+/* Audio (Phase 9, Block 4): iOS unterbricht den Audio-Kontext nach Sperren, Anruf oder App-Wechsel („interrupted“) oder schließt ihn.
+   Deshalb aus jedem Zustand außer „running“ wecken. Geschlossen oder Wecken abgelehnt: beim nächsten Mal neu anlegen. */
 function audioCtx(){try{var C=window.AudioContext||window.webkitAudioContext;if(!C)return null;
-  if(!AC)AC=new C();if(AC.state==='suspended')AC.resume();return AC;}catch(e){return null;}}
-function alarm(){
-  var c=audioCtx();
-  if(c)try{[0,.22,.44].forEach(function(off){var o=c.createOscillator(),g=c.createGain();
+  if(!AC||AC.state==='closed')AC=new C();
+  if(AC.state!=='running'){var a=AC,r=a.resume();if(r&&r.catch)r.catch(function(){if(AC===a)AC=null;});}
+  return AC;}catch(e){return null;}}
+function beep(c){try{[0,.22,.44].forEach(function(off){var o=c.createOscillator(),g=c.createGain();
     o.type='sine';o.frequency.value=880;o.connect(g);g.connect(c.destination);
     var t0=c.currentTime+off;g.gain.setValueAtTime(.0001,t0);
     g.gain.exponentialRampToValueAtTime(.3,t0+.01);g.gain.exponentialRampToValueAtTime(.0001,t0+.16);
-    o.start(t0);o.stop(t0+.18);});}catch(e){}
+    o.start(t0);o.stop(t0+.18);});}catch(e){}}
+/* Läuft das Audio gerade nicht, erst wecken, dann piepen. Kommt das Wecken später als 3 s, entfällt der Ton (kein verspätetes Piepen). */
+function alarm(){
+  var c=audioCtx(),t=Date.now();
+  if(c){if(c.state==='running')beep(c);
+    else try{c.resume().then(function(){if(c.state==='running'&&Date.now()-t<3000)beep(c);},function(){});}catch(e){}}
   try{if(navigator.vibrate)navigator.vibrate([180,90,180]);}catch(e){}}
+/* Jeder Tipp im laufenden Training (mit Ton an) und jede Rückkehr in die App weckt das Audio, damit der nächste Pausenton klingt.
+   Ein Tipp ist für iOS die Erlaubnis, Audio zu starten. */
+document.addEventListener('pointerdown',function(){if(S&&S.active&&S.sound!==false&&(!AC||AC.state!=='running'))audioCtx();},true);
+document.addEventListener('visibilitychange',function(){if(AC&&document.visibilityState==='visible')audioCtx();});
 var wl=null;
 function wakeOn(){if(wl||!navigator.wakeLock||!S||!S.active)return;
   try{navigator.wakeLock.request('screen').then(function(x){wl=x;x.addEventListener('release',function(){wl=null;});},function(){});}catch(e){}}
@@ -1436,7 +1468,14 @@ document.addEventListener('visibilitychange',function(){
 
 
 /* ---------- Auswertung ---------- */
-function e1(st){var w=Number(st.w||0),r=Number(st.r||0);return (w>0&&r>0)?w*(1+r/30):0;}
+/* Unterstützte Übungen (Phase 9, Block 2): eingetragen wird die Hilfe. Für Bestleistung, 1RM und Volumen zählt das bewegte Gewicht
+   = Körpergewicht − Hilfe. Körpergewicht: letzter Eintrag am oder vor dem Tag der Einheit, sonst der früheste vorhandene.
+   Ohne Körpergewicht zählt der Satz dort nicht (0). Andere Übungen rechnen wie bisher mit dem eingetragenen Gewicht. */
+function bwAt(date){var b=null,f=null;S.bodyweight.forEach(function(x){if(!f||x.date<f.date)f=x;if(x.date<=date&&(!b||x.date>=b.date))b=x;});var o=b||f;return o?Number(o.kg)||0:0;}
+function kgEff(v,exId,date){if(v===''||v==null)return 0;var n=Number(v);if(!exId||!ex(exId).assist)return n;var bw=bwAt(date);return bw>0?Math.max(0,bw-n):0;}
+function e1(st,exId,date){var w=kgEff(st.w,exId,date),r=Number(st.r||0);return (w>0&&r>0)?w*(1+r/30):0;}
+/* Satz als Text, unterstützt mit „Hilfe“ davor */
+function setTxt(exId,st,sep){return (ex(exId).assist?'Hilfe ':'')+dk(st.w)+(sep==null?' × ':sep)+st.r;}
 function nfmt(v){return String(Math.round(v*10)/10).replace('.',',');}
 var _prC={};
 function bestEver(exId,uni,excludeId){
@@ -1445,9 +1484,9 @@ function bestEver(exId,uni,excludeId){
   var b=0;
   S.workouts.forEach(function(w){if(w.id===excludeId)return;
     w.entries.forEach(function(e){if(e.exId!==exId||!!e.uni!==!!uni)return;
-      e.sets.forEach(function(st){var v=e1(st);if(v>b)b=v;});});});
+      e.sets.forEach(function(st){var v=e1(st,exId,w.date);if(v>b)b=v;});});});
   return (_prC[k]=b);}
-function isPRset(w,e,st){var b=bestEver(e.exId,e.uni,w.id);return b>0&&isDone(st)&&e1(st)>b*1.001;}
+function isPRset(w,e,st){var b=bestEver(e.exId,e.uni,w.id);return b>0&&isDone(st)&&e1(st,e.exId,w.date)>b*1.001;}
 /* PR in beide Richtungen neu bewerten: setzen, wenn neu erreicht; entfernen, wenn durch Korrektur weg */
 function refreshPR(w,ei,si){
   var e=w.entries[ei],st=e.sets[si],on=isPRset(w,e,st);
@@ -1458,7 +1497,7 @@ function refreshPR(w,ei,si){
   if(card){var any=e.sets.some(function(x){return isPRset(w,e,x);}),pill=card.querySelector('.pill.pr');
     if(any&&!pill){var g=card.querySelector('.grow');if(g)g.insertAdjacentHTML('beforeend',' <span class="pill pr just">PR</span>');}
     else if(!any&&pill)pill.remove();}
-  if(on&&!was&&tr)prToast('Bestleistung: '+dk(st.w)+' × '+st.r);}
+  if(on&&!was&&tr)prToast('Bestleistung: '+setTxt(e.exId,st));}
 
 function volWeek(anchor){
   var ws=weekStart(anchor),we=addDays(ws,6),m={};
@@ -1689,7 +1728,7 @@ function renderWorkout(a,isActive){
   a.entries.forEach(function(e,ei){
     var x=ex(e.exId),sl=slotById(s,e.slotId);var planned=sl&&sl.exId===e.exId;
     var perf=lastPerf(e.exId,e.uni,a.id);var hint=progHint(e,perf);
-    var prBase=bestEver(e.exId,e.uni,a.id),hasPR=prBase>0&&e.sets.some(function(st){return isDone(st)&&e1(st)>prBase*1.001;});
+    var prBase=bestEver(e.exId,e.uni,a.id),hasPR=prBase>0&&e.sets.some(function(st){return isDone(st)&&e1(st,e.exId,a.date)>prBase*1.001;});
     var allDone=e.sets.length>0&&e.sets.every(isDone);var role=ssRole(a,ei);
     h+='<div class="card entry'+(sl&&sl.anker?' anker':'')+(isActive&&allDone?' folded':'')+(role==='a'?' ssA':role==='b'?' ssB':'')+'" data-m="'+esc(x.muscle)+'" data-sum="'+esc(fmtSets(e.sets.filter(filled))||'erledigt')+'">';
     h+='<div class="row click" data-fold="'+ei+'"><div class="grow"><span class="exname">'+esc(x.name)+'</span> '+(sl&&sl.anker?'<span class="pill a">Anker</span>':'')+' '+mpill(x.muscle)+' <span class="pill">'+esc(x.equip)+'</span>'+(hasPR?' <span class="pill pr">PR</span>':'')+(role?' <span class="pill ss">Supersatz '+(role==='a'?'1/2':'2/2')+'</span>':'')+'</div><button class="tiny danger" data-edel="'+ei+'" aria-label="Übung entfernen">'+ico('x')+'</button></div>';
@@ -1705,7 +1744,7 @@ function renderWorkout(a,isActive){
     if(x.note)h+='<div class="cue"><b>Deine Notiz:</b> '+esc(x.note)+'</div>';
     h+='<p class="last">'+(perf?'Letztes Mal ('+fmtDate(perf.date)+'): '+esc(fmtSets(perf.sets)):'Noch keine Daten für diese Variante.')+'</p>';
     if(perf&&perf.note)h+='<div class="notebox">Notiz letztes Mal: '+esc(perf.note)+'</div>';
-    if(hint)h+='<p class="hint"><b>Heute +'+hint.inc+' kg</b> · wieder ab '+hint.from+' Wdh.<span class="vh"> Letztes Mal lagen alle Sätze oben im Bereich.</span></p>';
+    if(hint)h+='<p class="hint"><b>Heute '+(x.assist?'−'+hint.inc+' kg Hilfe':'+'+hint.inc+' kg')+'</b> · wieder ab '+hint.from+' Wdh.<span class="vh"> Letztes Mal lagen alle Sätze oben im Bereich.</span></p>';
     /* Aufwärmen (W2): zugeklappt eine Zeile über der Tabelle, aufgeklappt eigene Gruppe in der Tabelle */
     var wuOpen=false,sg=null;
     if(e.wu){wuSync(a,ei);sg=wuSugg(a,ei);wuOpen=!!ui.wuOpen[a.id+'|'+ei];
@@ -1724,8 +1763,8 @@ function renderWorkout(a,isActive){
       h+='<tr class="wu-act"><td></td><td colspan="4"><div class="row"><button class="tiny" data-wuplus="'+ei+'">+ Aufwärmsatz</button><span class="grow"></span><button class="tiny danger" data-wunone="'+ei+'">Heute ohne</button></div></td></tr>';
       h+='<tr class="grp"><td colspan="5">Arbeitssätze</td></tr>';}
     e.sets.forEach(function(st,si){
-      var ph=perf&&perf.sets[si]?perf.sets[si]:null;var dn=isDone(st);
-      var isPR=dn&&prBase>0&&e1(st)>prBase*1.001;
+      var ph=perf&&perf.all[si]?perf.all[si]:null;var dn=isDone(st);   /* Vorwert von derselben Satznummer */
+      var isPR=dn&&prBase>0&&e1(st,e.exId,a.date)>prBase*1.001;
       h+='<tr class="setrow'+(dn?' done':'')+(isPR?' pr':'')+'">';
       h+='<td class="n"><button class="chk" data-done="'+ei+'.'+si+'" aria-label="Satz '+(si+1)+(dn?' erledigt':' abhaken')+'">'+(dn?ico('check'):(si+1))+'</button></td>';
       h+='<td class="w"><input type="number" step="0.5" inputmode="decimal" data-set="'+ei+'.'+si+'.w" value="'+esc(st.w)+'" placeholder="'+(ph?esc(ph.w):'')+'"></td>';
@@ -1865,17 +1904,18 @@ function renderExercises(){
     var rows=[];S.workouts.forEach(function(w){w.entries.forEach(function(e){if(e.exId===x.id){var dn=e.sets.filter(filled);if(dn.length)rows.push({date:w.date,uni:e.uni,sets:dn,note:e.note});}});});
     rows.sort(function(a,b){return a.date<b.date?1:-1;});
     h+='<h2 class="sec">Verlauf</h2>';
+    if(x.assist&&rows.length&&!S.bodyweight.length)h+='<p class="small mute">Für Bestleistung und Verlauf fehlt dein Körpergewicht. Trag es auf „Heute“ ein.</p>';
     if(rows.length){
       var asc=rows.slice().reverse(),base=pd(asc[0].date),pts=[],bst=null;
       asc.forEach(function(r){
-        var mx=0,ms=null;r.sets.forEach(function(st){var v=e1(st);if(v>mx){mx=v;ms=st;}});
+        var mx=0,ms=null;r.sets.forEach(function(st){var v=e1(st,x.id,r.date);if(v>mx){mx=v;ms=st;}});
         if(mx>0){pts.push({x:(pd(r.date)-base)/864e5,y:Math.round(mx*10)/10});
           if(!bst||mx>bst.v)bst={v:mx,s:ms,date:r.date};}});
-      if(bst)h+='<div class="best"><b>'+esc(dk(bst.s.w))+' × '+esc(bst.s.r)+'</b><span class="mute small">Bestleistung am '+fmtDate(bst.date)+' · '+nfmt(bst.v)+' kg geschätztes 1RM</span></div>';
+      if(bst)h+='<div class="best"><b>'+esc(setTxt(x.id,bst.s))+'</b><span class="mute small">Bestleistung am '+fmtDate(bst.date)+' · '+(x.assist?'≈ '+nfmt(kgEff(bst.s.w,x.id,bst.date))+' kg bewegt · ':'')+nfmt(bst.v)+' kg geschätztes 1RM</span></div>';
       if(pts.length>1)h+=chartHTML([{pts:pts,color:'var(--quad)',dots:1}],{x0:fmtDate(asc[0].date),x1:fmtDate(asc[asc.length-1].date)})
-        +'<p class="small mute" style="margin-top:0">Geschätztes Maximalgewicht für eine Wiederholung (1RM), aus dem besten Satz je Einheit.</p>';}
+        +'<p class="small mute" style="margin-top:0">Geschätztes Maximalgewicht für eine Wiederholung (1RM), aus dem besten Satz je Einheit.'+(x.assist?' Gewicht: Körpergewicht minus Hilfe.':'')+'</p>';}
     if(!rows.length)h+='<p class="mute small">Noch nie eingetragen. Sobald du die Übung in einer Einheit einträgst, erscheint hier der Verlauf.</p>';
-    else{h+='<div class="tablewrap"><table class="cmp"><tr><th>Datum</th><th>Sätze</th><th>Bester Satz</th></tr>';rows.forEach(function(r){var best=r.sets.reduce(function(m,s){var v=Number(s.w||0)*(1+Number(s.r||0)/30);return v>m.v?{v:v,s:s}:m;},{v:-1,s:null});h+='<tr><td>'+fmtDate(r.date)+(r.uni?'<br><span class="small mute">je Seite</span>':'')+'</td><td class="hist-sets">'+esc(fmtSets(r.sets))+(r.note?'<div class="small mute">'+esc(r.note)+'</div>':'')+'</td><td class="small">'+(best.s?esc(dk(best.s.w))+'×'+esc(best.s.r):'')+'</td></tr>';});h+='</table></div>';}
+    else{h+='<div class="tablewrap"><table class="cmp"><tr><th>Datum</th><th>Sätze</th><th>Bester Satz</th></tr>';rows.forEach(function(r){var best=r.sets.reduce(function(m,s){var v=e1(s,x.id,r.date);return v>m.v?{v:v,s:s}:m;},{v:-1,s:null});h+='<tr><td>'+fmtDate(r.date)+(r.uni?'<br><span class="small mute">je Seite</span>':'')+'</td><td class="hist-sets">'+esc(fmtSets(r.sets))+(r.note?'<div class="small mute">'+esc(r.note)+'</div>':'')+'</td><td class="small">'+(best.s?esc(setTxt(x.id,best.s,'×')):'')+'</td></tr>';});h+='</table></div>';}
     return h;
   }
   h+='<div class="row"><input id="ex_q" type="search" class="grow" placeholder="Übung suchen…" value="'+esc(ui.exQ||'')+'"><button class="primary" data-act="newex">+ Neu</button></div>';
@@ -1936,16 +1976,16 @@ function finishSave(){
 }
 /* ---------- Zusammenfassung nach dem Speichern (Block O) ---------- */
 /* Volumen je Übung (erledigte Sätze, kg × Wdh.); Vergleich nur über Übungen, die in beiden Einheiten vorkommen */
-function volBy(w){var m={};w.entries.forEach(function(e){var k=e.exId+'|'+(e.uni?1:0);e.sets.forEach(function(st){if(isDone(st)){m[k]=(m[k]||0)+Number(st.w||0)*Number(st.r||0);
-  (st.drops||[]).forEach(function(d){if(isDone(d))m[k]+=Number(d.w||0)*Number(d.r||0);});}});});return m;}   /* Drops zählen mit (W3) */
+function volBy(w){var m={};w.entries.forEach(function(e){var k=e.exId+'|'+(e.uni?1:0),kg=function(v){return kgEff(v,e.exId,w.date);};e.sets.forEach(function(st){if(isDone(st)){m[k]=(m[k]||0)+kg(st.w)*Number(st.r||0);
+  (st.drops||[]).forEach(function(d){if(isDone(d))m[k]+=kg(d.w)*Number(d.r||0);});}});});return m;}   /* Drops zählen mit (W3); unterstützt: bewegtes Gewicht */
 function sumV(m){var v=0;Object.keys(m).forEach(function(k){v+=m[k];});return v;}
 function buildSum(a){
   var sets=0,prs=[];
   a.entries.forEach(function(e){
     var base=bestEver(e.exId,e.uni,a.id),top=null;
     e.sets.forEach(function(st){if(!isDone(st))return;sets++;
-      if(base>0&&e1(st)>base*1.001&&(!top||e1(st)>e1(top)))top=st;});
-    if(top)prs.push({name:ex(e.exId).name+(e.uni?' (je Seite)':''),set:dk(top.w)+' × '+top.r});});
+      if(base>0&&e1(st,e.exId,a.date)>base*1.001&&(!top||e1(st,e.exId,a.date)>e1(top,e.exId,a.date)))top=st;});
+    if(top)prs.push({name:ex(e.exId).name+(e.uni?' (je Seite)':''),set:setTxt(e.exId,top)});});
   var va=volBy(a),vol=sumV(va),prev=null,delta=null;
   S.workouts.forEach(function(w){if(w.id!==a.id&&w.sessionId===a.sessionId&&w.date<=a.date&&(!prev||w.date>=prev.date))prev=w;});
   if(prev){var vp=volBy(prev),x=0,y=0;Object.keys(va).forEach(function(k){if(vp[k]>0&&va[k]>0){x+=va[k];y+=vp[k];}});if(y>0)delta=Math.round((x-y)/y*100);}
@@ -2124,7 +2164,17 @@ document.addEventListener('click',function(ev){
     if(d.setplus!==undefined){w.entries[+d.setplus].sets.push(emptySet());save();render();return;}
     if(d.setminus!==undefined){var ss=w.entries[+d.setminus].sets;if(ss.length<2)return;var gone=ss.pop();save();render();
       if(filled(gone)||gone.done||gone.note)toastUndo('Satz '+(ss.length+1)+' entfernt',function(){ss.push(gone);});return;}
-    if(d.copy!==undefined){var en=w.entries[+d.copy];var p=lastPerf(en.exId,en.uni,w.id);if(p){en.sets=p.sets.map(function(s){return {w:s.w,r:s.r,rir:'',note:'',done:false};});save();render();}return;}
+    /* Letzte Werte übernehmen: nur leere, offene Sätze bekommen kg und Wdh derselben Satznummer. RIR, Notizen, Haken und Drops bleiben.
+       Mehr Sätze als heute: Sätze kommen dazu. Weniger: Satzzahl bleibt. Ohne neue Sätze kein Neuaufbau, sonst hält die Karte ihre Position. */
+    if(d.copy!==undefined){var ci=+d.copy,en=w.entries[ci],p=lastPerf(en.exId,en.uni,w.id);if(!p)return;
+      var grew=en.sets.length<p.n;
+      while(en.sets.length<p.n)en.sets.push(emptySet());
+      en.sets.forEach(function(st,i){var q=p.all[i];if(q&&filled(q)&&!filled(st)&&!st.done){st.w=q.w;st.r=q.r;}});
+      save();
+      if(grew){var cc=document.querySelectorAll('.card.entry')[ci],top0=cc?cc.getBoundingClientRect().top:0;render();
+        var cn=document.querySelectorAll('.card.entry')[ci];if(cc&&cn)window.scrollBy(0,cn.getBoundingClientRect().top-top0);}
+      else{en.sets.forEach(function(st,i){syncRow(w,ci,i);});wuPh(w,ci);}
+      return;}
     if(d.persist!==undefined){var en2=w.entries[+d.persist];var sl2=slotById(sessionById(w.sessionId),en2.slotId);if(sl2){sl2.exId=en2.exId;sl2.uni=en2.uni;sl2.muscle=ex(en2.exId).muscle;sl2.repMin=en2.repMin;sl2.repMax=en2.repMax;save();render();toast('Plan aktualisiert');}return;}
     if(d.edel!==undefined){var ri=+d.edel,re=w.entries.splice(ri,1)[0],rw=w;save();render();
       toastUndo('Übung entfernt',function(){rw.entries.splice(Math.min(ri,rw.entries.length),0,re);});return;}
